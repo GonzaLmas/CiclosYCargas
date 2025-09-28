@@ -1,5 +1,5 @@
 import supabase from "./SupabaseService";
-import type { Tables, TablesInsert } from "./supabase";
+import type { Tables, TablesInsert } from "./Supabase";
 import {
   getDiasOvulatorios,
   getDiasFolicular,

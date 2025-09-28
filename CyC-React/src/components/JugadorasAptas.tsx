@@ -72,7 +72,7 @@ export default function JugadorasAptas() {
     if (loading) {
       return (
         <tr>
-          <td colSpan={5} className="px-6 py-4 text-center">
+          <td colSpan={4} className="px-6 py-4 text-center">
             Cargando jugadoras...
           </td>
         </tr>
@@ -82,7 +82,7 @@ export default function JugadorasAptas() {
     if (error) {
       return (
         <tr>
-          <td colSpan={5} className="px-6 py-4 text-center text-red-500">
+          <td colSpan={4} className="px-6 py-4 text-center text-red-500">
             {error}
           </td>
         </tr>
@@ -92,7 +92,7 @@ export default function JugadorasAptas() {
     if (jugadoras.length === 0) {
       return (
         <tr>
-          <td colSpan={5} className="px-6 py-4 text-center">
+          <td colSpan={4} className="px-6 py-4 text-center">
             No hay jugadoras disponibles
           </td>
         </tr>
@@ -101,18 +101,6 @@ export default function JugadorasAptas() {
 
     return jugadoras.map((jugadora, index) => (
       <tr key={jugadora.IdJugadora || index} className="hover:bg-gray-800">
-        <td className="px-6 py-4 whitespace-nowrap">
-          {jugadora.Nombre || "-"}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-          {jugadora.Apellido || "-"}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-          {jugadora.Edad ? `${jugadora.Edad} años` : "-"}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-          {jugadora.Division || "-"}
-        </td>
         <td className="px-6 py-4 whitespace-nowrap text-indigo-500 flex items-center gap-1">
           {(() => {
             const dir = dirByIndicador(
@@ -120,6 +108,15 @@ export default function JugadorasAptas() {
             );
             return dir ? <Arrow direction={dir} /> : "-";
           })()}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          {jugadora.Nombre || "-"}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          {jugadora.Apellido || "-"}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          {jugadora.Division || "-"}
         </td>
       </tr>
     ));
@@ -130,16 +127,19 @@ export default function JugadorasAptas() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-xl font-bold">Jugadoras Disponibles</h2>
-          <p className="text-gray-400 text-sm">
-            Lista de jugadoras aptas para entrenar
-          </p>
         </div>
       </div>
 
       <div className="overflow-x-auto bg-gray-800 shadow-lg rounded-md overflow-hidden border border-indigo-500/60">
         <table className="min-w-full divide-y divide-gray-700">
-          <thead style={{ backgroundColor: "#575dd0ff" }} className="text-white">
+          <thead
+            style={{ backgroundColor: "#575dd0ff" }}
+            className="text-white"
+          >
             <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                Rendimiento
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                 Nombre
               </th>
@@ -147,13 +147,7 @@ export default function JugadorasAptas() {
                 Apellido
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Edad
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                 División
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Rendimiento
               </th>
             </tr>
           </thead>
