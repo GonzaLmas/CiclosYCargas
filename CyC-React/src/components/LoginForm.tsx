@@ -42,7 +42,15 @@ export default function LoginForm() {
         setPassword("");
         return;
       }
-      navigate("/navbar");
+
+      const userRole = user.user_metadata?.role;
+      if (userRole === "PF") {
+        navigate("/jugadorasaptas");
+      } else if (userRole === "Jugadora") {
+        navigate("/formpercepcion");
+      } else {
+        navigate("/navbar");
+      }
     } catch (err: any) {
       setError("Email o contraseña incorrectos. Intente de nuevo por favor");
       setPassword("");
@@ -58,7 +66,7 @@ export default function LoginForm() {
 
   const handleVolver = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    navigate("/");
+    navigate("/navbar");
   };
 
   return (
@@ -66,7 +74,10 @@ export default function LoginForm() {
       <div className="flex justify-center">
         <div className="w-full max-w-lg">
           <div className="bg-gray-800 shadow-lg rounded-lg overflow-hidden">
-            <div className="text-white text-center p-4" style={{ backgroundColor: "#575dd0ff" }}>
+            <div
+              className="text-white text-center p-4"
+              style={{ backgroundColor: "#575dd0ff" }}
+            >
               <h3 className="text-lg font-semibold">Ingresar</h3>
             </div>
             <div className="p-6">
