@@ -26,6 +26,10 @@ export default function RegistroUsuario() {
   const [mensaje, setMensaje] = useState("");
   const [registroExitoso, setRegistroExitoso] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
+  const [cooldownLeft, setCooldownLeft] = useState(0);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const navigate = useNavigate();
 
   const roles = [
@@ -48,6 +52,14 @@ export default function RegistroUsuario() {
     };
     fetchClubes();
   }, []);
+
+  useEffect(() => {
+    if (cooldownLeft <= 0) return;
+    const id = setInterval(() => {
+      setCooldownLeft((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [cooldownLeft]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -147,9 +159,12 @@ export default function RegistroUsuario() {
       }
 
       setMensaje(
-        "¡Registro exitoso! Revisa tu email para confirmar tu cuenta."
+        "¡Registro exitoso! Revisa tu email para confirmar tu cuenta y poder iniciar sesión."
       );
       setRegistroExitoso(true);
+      setResendMessage("");
+      setCooldownLeft(60);
+      setRegisteredEmail(form.Email);
 
       setForm({
         Email: "",
@@ -162,8 +177,6 @@ export default function RegistroUsuario() {
         IdClub: "",
         Division: "",
       });
-
-      setTimeout(() => navigate("/login"), 3000);
     } catch (error) {
       console.error("Error al registrar usuario:", error);
       setMensaje(
@@ -172,6 +185,38 @@ export default function RegistroUsuario() {
       setRegistroExitoso(false);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResendConfirmation = async (
+    e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>
+  ) => {
+    e.preventDefault();
+    setResendMessage("");
+    setMensaje("");
+    if (!registeredEmail.trim()) {
+      setMensaje("Ingresá el email para reenviar la confirmación");
+      return;
+    }
+    if (cooldownLeft > 0) return;
+    setResendLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: registeredEmail,
+      });
+      if (error) throw error;
+      setResendMessage(
+        "Si el correo existe y no estaba verificado, enviamos un nuevo email de confirmación."
+      );
+      setCooldownLeft(60);
+    } catch (err: any) {
+      setMensaje(
+        err?.message ||
+          "No pudimos reenviar el email de confirmación. Intente nuevamente."
+      );
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -367,16 +412,48 @@ export default function RegistroUsuario() {
                     Volver
                   </button>
                 </div>
-                {mensaje &&
-                  (registroExitoso ? (
-                    <Alert type="success" className="mt-4">
-                      {mensaje}
-                    </Alert>
-                  ) : (
-                    <Alert type="error" className="mt-4">
-                      {mensaje}
-                    </Alert>
-                  ))}
+                {mensaje && (
+                  <Alert
+                    type={registroExitoso ? "success" : "error"}
+                    className="mt-4"
+                  >
+                    {mensaje}
+                  </Alert>
+                )}
+
+                {registroExitoso && (
+                  <div className="mt-4 text-center text-sm text-gray-300">
+                    <p className="mb-2">
+                      ¿No te llegó el email de confirmación? Ingresa tu email
+                      para reenviarlo.👇
+                    </p>
+                    <div className="flex justify-center mb-3">
+                      <input
+                        type="email"
+                        value={registeredEmail}
+                        onChange={(e) => setRegisteredEmail(e.target.value)}
+                        className="input-field max-w-sm"
+                        placeholder="Tu email"
+                      />
+                    </div>
+                    <button
+                      onClick={handleResendConfirmation}
+                      disabled={resendLoading || cooldownLeft > 0}
+                      className="font-semibold text-indigo-400 hover:text-indigo-300 disabled:opacity-60"
+                    >
+                      {resendLoading
+                        ? "Enviando..."
+                        : cooldownLeft > 0
+                        ? `Reenviar (${cooldownLeft}s)`
+                        : "Reenviar"}
+                    </button>
+                    {resendMessage && (
+                      <Alert type="success" className="mt-3">
+                        {resendMessage}
+                      </Alert>
+                    )}
+                  </div>
+                )}
               </form>
               <p className="mt-6 text-center text-sm text-gray-400">
                 ¿Ya tienes una cuenta?{" "}
