@@ -40,12 +40,12 @@ export default function Navbar() {
 
   const navItemsJugadora = [
     {
-      name: "Formulario Jugadora",
+      name: "Formulario Mensual",
       href: "/formjugadora",
       current: location.pathname === "/formjugadora",
     },
     {
-      name: "Formulario Percepción",
+      name: "Percepción del Entrenamiento",
       href: "/formpercepcion",
       current: location.pathname === "/formpercepcion",
     },

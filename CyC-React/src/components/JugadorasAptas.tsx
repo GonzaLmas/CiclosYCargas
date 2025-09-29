@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getJugadorasAptas, type Jugadora } from "../services/JugadoraService";
 import { getPFById } from "../services/PFService";
@@ -34,6 +34,33 @@ export default function JugadorasAptas() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  type SortKey = "Indicador" | "Nombre" | "Apellido" | "Division";
+  const [sortKey, setSortKey] = useState<SortKey>("Indicador");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const SortIcon = ({ active, dir }: { active: boolean; dir: "asc" | "desc" }) => {
+    const upClass = active && dir === "asc" ? "text-white" : "text-white/40";
+    const downClass = active && dir === "desc" ? "text-white" : "text-white/40";
+    return (
+      <span className="flex flex-col leading-none">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className={`w-3 h-3 ${upClass}`}
+        >
+          <path d="M7 14l5-5 5 5H7z" />
+        </svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className={`w-3 h-3 ${downClass}`}
+        >
+          <path d="M7 10l5 5 5-5H7z" />
+        </svg>
+      </span>
+    );
+  };
 
   useEffect(() => {
     const cargarJugadoras = async () => {
@@ -68,6 +95,43 @@ export default function JugadorasAptas() {
     e.preventDefault();
     navigate("/navbar");
   };
+  const onSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      // Por defecto, "Indicador" en desc (mejor rendimiento primero); el resto en asc
+      setSortDir(key === "Indicador" ? "desc" : "asc");
+    }
+  };
+
+  const sortedJugadoras = useMemo(() => {
+    const data = [...jugadoras];
+    const dir = sortDir === "asc" ? 1 : -1;
+    const getVal = (j: JugadoraConNull) => j[sortKey as keyof JugadoraConNull];
+    data.sort((a, b) => {
+      const va = getVal(a);
+      const vb = getVal(b);
+      // nulls al final
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+
+      if (sortKey === "Indicador") {
+        const na = Number(va);
+        const nb = Number(vb);
+        if (na < nb) return -1 * dir;
+        if (na > nb) return 1 * dir;
+        return 0;
+      }
+
+      // Orden alfabético case-insensitive
+      const sa = String(va).toLocaleLowerCase();
+      const sb = String(vb).toLocaleLowerCase();
+      return sa.localeCompare(sb) * dir;
+    });
+    return data;
+  }, [jugadoras, sortKey, sortDir]);
   const renderContent = () => {
     if (loading) {
       return (
@@ -99,7 +163,7 @@ export default function JugadorasAptas() {
       );
     }
 
-    return jugadoras.map((jugadora, index) => (
+    return sortedJugadoras.map((jugadora, index) => (
       <tr key={jugadora.IdJugadora || index} className="hover:bg-gray-800">
         <td className="px-6 py-4 whitespace-nowrap text-indigo-500 flex items-center gap-1">
           {(() => {
@@ -137,24 +201,67 @@ export default function JugadorasAptas() {
             className="text-white"
           >
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Rendimiento
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
+                onClick={() => onSort("Indicador")}
+                role="button"
+                aria-label="Ordenar por rendimiento"
+              >
+                <span className="inline-flex items-center gap-2">
+                  Rendimiento
+                  <SortIcon
+                    active={sortKey === "Indicador"}
+                    dir={sortKey === "Indicador" ? sortDir : "asc"}
+                  />
+                </span>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Nombre
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
+                onClick={() => onSort("Nombre")}
+                role="button"
+                aria-label="Ordenar por nombre"
+              >
+                <span className="inline-flex items-center gap-2">
+                  Nombre
+                  <SortIcon
+                    active={sortKey === "Nombre"}
+                    dir={sortKey === "Nombre" ? sortDir : "asc"}
+                  />
+                </span>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                Apellido
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
+                onClick={() => onSort("Apellido")}
+                role="button"
+                aria-label="Ordenar por apellido"
+              >
+                <span className="inline-flex items-center gap-2">
+                  Apellido
+                  <SortIcon
+                    active={sortKey === "Apellido"}
+                    dir={sortKey === "Apellido" ? sortDir : "asc"}
+                  />
+                </span>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                División
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
+                onClick={() => onSort("Division")}
+                role="button"
+                aria-label="Ordenar por división"
+              >
+                <span className="inline-flex items-center gap-2">
+                  División
+                  <SortIcon
+                    active={sortKey === "Division"}
+                    dir={sortKey === "Division" ? sortDir : "asc"}
+                  />
+                </span>
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-700">{renderContent()}</tbody>
         </table>
       </div>
-
       <div className="mt-4 flex justify-center">
         <button onClick={handleClick} className="btn-back">
           Volver
