@@ -11,12 +11,14 @@ import FormPercepcion from "./components/FormPercepcion";
 import Layout from "./components/Layout.js";
 import Registro from "./components/Registro";
 import CompletarDatos from "./components/CompletarDatos";
+import ResetPassword from "./components/ResetPassword";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<LoginForm />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/registro" element={<Registro />} />
       <Route path="/completar-datos" element={<CompletarDatos />} />
 
