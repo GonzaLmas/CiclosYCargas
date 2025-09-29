@@ -29,6 +29,17 @@ export default function JugadorasAptas() {
     [K in keyof Jugadora]: Jugadora[K] | null;
   };
 
+  const formatName = (value: string | null | undefined) => {
+    if (!value) return "-";
+    const t = String(value).trim();
+    if (!t) return "-";
+    return t
+      .toLowerCase()
+      .split(/\s+/)
+      .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+      .join(" ");
+  };
+
   const [jugadoras, setJugadoras] = useState<JugadoraConNull[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +48,15 @@ export default function JugadorasAptas() {
   type SortKey = "Indicador" | "Nombre" | "Apellido" | "Division";
   const [sortKey, setSortKey] = useState<SortKey>("Indicador");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const SortIcon = ({ active, dir }: { active: boolean; dir: "asc" | "desc" }) => {
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
+  const SortIcon = ({
+    active,
+    dir,
+  }: {
+    active: boolean;
+    dir: "asc" | "desc";
+  }) => {
     const upClass = active && dir === "asc" ? "text-white" : "text-white/40";
     const downClass = active && dir === "desc" ? "text-white" : "text-white/40";
     return (
@@ -100,9 +119,9 @@ export default function JugadorasAptas() {
       setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortKey(key);
-      // Por defecto, "Indicador" en desc (mejor rendimiento primero); el resto en asc
       setSortDir(key === "Indicador" ? "desc" : "asc");
     }
+    setPage(1);
   };
 
   const sortedJugadoras = useMemo(() => {
@@ -112,7 +131,7 @@ export default function JugadorasAptas() {
     data.sort((a, b) => {
       const va = getVal(a);
       const vb = getVal(b);
-      // nulls al final
+
       if (va == null && vb == null) return 0;
       if (va == null) return 1;
       if (vb == null) return -1;
@@ -125,13 +144,28 @@ export default function JugadorasAptas() {
         return 0;
       }
 
-      // Orden alfabético case-insensitive
       const sa = String(va).toLocaleLowerCase();
       const sb = String(vb).toLocaleLowerCase();
       return sa.localeCompare(sb) * dir;
     });
     return data;
   }, [jugadoras, sortKey, sortDir]);
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(sortedJugadoras.length / rowsPerPage)),
+    [sortedJugadoras.length]
+  );
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const pagedJugadoras = useMemo(
+    () => sortedJugadoras.slice(startIndex, endIndex),
+    [sortedJugadoras, startIndex, endIndex]
+  );
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [totalPages, page]);
   const renderContent = () => {
     if (loading) {
       return (
@@ -163,9 +197,9 @@ export default function JugadorasAptas() {
       );
     }
 
-    return sortedJugadoras.map((jugadora, index) => (
+    return pagedJugadoras.map((jugadora, index) => (
       <tr key={jugadora.IdJugadora || index} className="hover:bg-gray-800">
-        <td className="px-6 py-4 whitespace-nowrap text-indigo-500 flex items-center gap-1">
+        <td className="px-3 py-4 w-12 sm:w-14 md:w-16 whitespace-nowrap text-indigo-500 flex items-center justify-center gap-1">
           {(() => {
             const dir = dirByIndicador(
               jugadora.Indicador as number | null | undefined
@@ -174,10 +208,10 @@ export default function JugadorasAptas() {
           })()}
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
-          {jugadora.Nombre || "-"}
+          {formatName(jugadora.Apellido as string | null | undefined)}
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
-          {jugadora.Apellido || "-"}
+          {formatName(jugadora.Nombre as string | null | undefined)}
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
           {jugadora.Division || "-"}
@@ -187,22 +221,22 @@ export default function JugadorasAptas() {
   };
 
   return (
-    <div className="p-6 min-h-screen text-white">
-      <div className="flex justify-between items-center mb-6">
+    <div className="px-4 py-4 sm:p-6 min-h-screen text-white">
+      <div className="flex justify-between items-center mb-2 sm:mb-4 md:mb-6">
         <div>
           <h2 className="text-xl font-bold">Jugadoras Disponibles</h2>
         </div>
       </div>
 
       <div className="overflow-x-auto bg-gray-800 shadow-lg rounded-md overflow-hidden border border-indigo-500/60">
-        <table className="min-w-full divide-y divide-gray-700">
+        <table className="min-w-full table-fixed divide-y divide-gray-700">
           <thead
             style={{ backgroundColor: "#575dd0ff" }}
             className="text-white"
           >
             <tr>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
+                className="px-3 py-3 w-12 sm:w-14 md:w-16 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
                 onClick={() => onSort("Indicador")}
                 role="button"
                 aria-label="Ordenar por rendimiento"
@@ -217,20 +251,6 @@ export default function JugadorasAptas() {
               </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
-                onClick={() => onSort("Nombre")}
-                role="button"
-                aria-label="Ordenar por nombre"
-              >
-                <span className="inline-flex items-center gap-2">
-                  Nombre
-                  <SortIcon
-                    active={sortKey === "Nombre"}
-                    dir={sortKey === "Nombre" ? sortDir : "asc"}
-                  />
-                </span>
-              </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
                 onClick={() => onSort("Apellido")}
                 role="button"
                 aria-label="Ordenar por apellido"
@@ -240,6 +260,20 @@ export default function JugadorasAptas() {
                   <SortIcon
                     active={sortKey === "Apellido"}
                     dir={sortKey === "Apellido" ? sortDir : "asc"}
+                  />
+                </span>
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
+                onClick={() => onSort("Nombre")}
+                role="button"
+                aria-label="Ordenar por nombre"
+              >
+                <span className="inline-flex items-center gap-2">
+                  Nombre
+                  <SortIcon
+                    active={sortKey === "Nombre"}
+                    dir={sortKey === "Nombre" ? sortDir : "asc"}
                   />
                 </span>
               </th>
@@ -262,7 +296,30 @@ export default function JugadorasAptas() {
           <tbody className="divide-y divide-gray-700">{renderContent()}</tbody>
         </table>
       </div>
-      <div className="mt-4 flex justify-center">
+      <div className="mt-2 sm:mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            className="px-3 py-1 rounded bg-indigo-600 disabled:bg-gray-600"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            aria-label="Página anterior"
+            title="Anterior"
+          >
+            <span aria-hidden="true">◀</span>
+          </button>
+          <span className="text-sm text-white/80">
+            Página {currentPage} de {totalPages}
+          </span>
+          <button
+            className="px-3 py-1 rounded bg-indigo-600 disabled:bg-gray-600"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            aria-label="Página siguiente"
+            title="Siguiente"
+          >
+            <span aria-hidden="true">▶</span>
+          </button>
+        </div>
         <button onClick={handleClick} className="btn-back">
           Volver
         </button>
