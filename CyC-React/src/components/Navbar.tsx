@@ -113,15 +113,35 @@ export default function Navbar() {
                 <span className="absolute -inset-1.5" />
                 <span className="sr-only">Open user menu</span>
                 <div className="flex items-center">
-                  <div className="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center text-white">
-                    <span className="text-sm font-medium uppercase">
-                      {user?.user_metadata?.name
-                        ? `${user.user_metadata.name.charAt(0)}${
-                            user.user_metadata.last_name?.charAt(0) || ""
-                          }`
-                        : user?.email?.charAt(0).toUpperCase() || "U"}
-                    </span>
-                  </div>
+                  {(() => {
+                    const avatarUrl =
+                      (user?.user_metadata as any)?.avatar_url ||
+                      (user?.user_metadata as any)?.picture ||
+                      (user as any)?.identities?.[0]?.identity_data?.avatar_url ||
+                      (user as any)?.identities?.[0]?.identity_data?.picture;
+                    if (avatarUrl) {
+                      return (
+                        <img
+                          src={avatarUrl}
+                          alt="Foto de perfil"
+                          referrerPolicy="no-referrer"
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                      );
+                    }
+                    const initials = user?.user_metadata?.name
+                      ? `${user.user_metadata.name.charAt(0)}${
+                          user.user_metadata.last_name?.charAt(0) || ""
+                        }`
+                      : user?.email?.charAt(0).toUpperCase() || "U";
+                    return (
+                      <div className="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center text-white">
+                        <span className="text-sm font-medium uppercase">
+                          {initials}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
               </MenuButton>
 
