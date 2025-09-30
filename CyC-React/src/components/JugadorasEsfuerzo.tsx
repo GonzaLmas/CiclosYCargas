@@ -27,6 +27,7 @@ export default function JugadorasEsfuerzo() {
   const [jugadoras, setJugadoras] = useState<JugadoraConNull[]>([]);
   const [esfuerzoById, setEsfuerzoById] = useState<EsfuerzoMap>({});
   const [fechaById, setFechaById] = useState<Record<string, string | null>>({});
+  const [totalSemanaById, setTotalSemanaById] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -35,7 +36,7 @@ export default function JugadorasEsfuerzo() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  type SortKey = "Esfuerzo" | "Nombre" | "Apellido" | "Division";
+  type SortKey = "Esfuerzo" | "Total" | "Nombre" | "Apellido" | "Division";
   const [sortKey, setSortKey] = useState<SortKey>("Esfuerzo");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const SortIcon = ({
@@ -85,10 +86,11 @@ export default function JugadorasEsfuerzo() {
       setLoading(true);
       setError(null);
       try {
-        const { jugadoras, esfuerzoById, fechaById } = await getEsfuerzoDataForPF(user.id);
+        const { jugadoras, esfuerzoById, fechaById, totalSemanaById } = await getEsfuerzoDataForPF(user.id);
         setJugadoras(jugadoras as any);
         setEsfuerzoById(esfuerzoById);
         setFechaById(fechaById);
+        setTotalSemanaById(totalSemanaById);
       } catch (err: any) {
         console.error("Error al cargar Esfuerzo:", err);
         setError("Error al cargar la información. Por favor, intente nuevamente.");
@@ -104,7 +106,7 @@ export default function JugadorasEsfuerzo() {
       setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortKey(key);
-      setSortDir(key === "Esfuerzo" ? "desc" : "asc");
+      setSortDir(key === "Esfuerzo" || key === "Total" ? "desc" : "asc");
     }
     setPage(1);
   };
@@ -119,6 +121,18 @@ export default function JugadorasEsfuerzo() {
         const bId = b.IdJugadora ?? undefined;
         const va = aId ? esfuerzoById[aId] ?? null : null;
         const vb = bId ? esfuerzoById[bId] ?? null : null;
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        if (va < vb) return -1 * dir;
+        if (va > vb) return 1 * dir;
+        return 0;
+      }
+      if (sortKey === "Total") {
+        const aId = a.IdJugadora ?? undefined;
+        const bId = b.IdJugadora ?? undefined;
+        const va = aId ? totalSemanaById[aId] ?? null : null;
+        const vb = bId ? totalSemanaById[bId] ?? null : null;
         if (va == null && vb == null) return 0;
         if (va == null) return 1;
         if (vb == null) return -1;
@@ -160,7 +174,7 @@ export default function JugadorasEsfuerzo() {
     if (loading) {
       return (
         <tr>
-          <td colSpan={5} className="px-6 py-4 text-center">
+          <td colSpan={6} className="px-6 py-4 text-center">
             Cargando jugadoras...
           </td>
         </tr>
@@ -169,7 +183,7 @@ export default function JugadorasEsfuerzo() {
     if (error) {
       return (
         <tr>
-          <td colSpan={5} className="px-6 py-4 text-center text-red-500">
+          <td colSpan={6} className="px-6 py-4 text-center text-red-500">
             {error}
           </td>
         </tr>
@@ -178,7 +192,7 @@ export default function JugadorasEsfuerzo() {
     if (jugadoras.length === 0) {
       return (
         <tr>
-          <td colSpan={5} className="px-6 py-4 text-center">
+          <td colSpan={6} className="px-6 py-4 text-center">
             No hay jugadoras disponibles
           </td>
         </tr>
@@ -203,6 +217,11 @@ export default function JugadorasEsfuerzo() {
               </span>
             );
           })()}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-center">
+          {j.IdJugadora != null && totalSemanaById[j.IdJugadora] != null
+            ? totalSemanaById[j.IdJugadora]
+            : "-"}
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
           {j.IdJugadora ? formatDateTime(fechaById[j.IdJugadora] ?? null) : "-"}
@@ -244,6 +263,20 @@ export default function JugadorasEsfuerzo() {
                   <SortIcon
                     active={sortKey === "Esfuerzo"}
                     dir={sortKey === "Esfuerzo" ? sortDir : "asc"}
+                  />
+                </span>
+              </th>
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
+                onClick={() => onSort("Total")}
+                role="button"
+                aria-label="Ordenar por total semanal"
+              >
+                <span className="inline-flex items-center gap-2">
+                  Total Semanal
+                  <SortIcon
+                    active={sortKey === "Total"}
+                    dir={sortKey === "Total" ? sortDir : "asc"}
                   />
                 </span>
               </th>

@@ -55,24 +55,30 @@ export default function FormPercepcionEsfuerzo() {
       }
 
       setSubmitting(true);
-      const today = new Date();
+      const nowUTC = new Date();
+      const baOffsetHours = 3;
+      const nowBA = new Date(nowUTC.getTime() - baOffsetHours * 60 * 60 * 1000);
       const start = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
-        0,
-        0,
-        0,
-        0
+        Date.UTC(
+          nowBA.getUTCFullYear(),
+          nowBA.getUTCMonth(),
+          nowBA.getUTCDate(),
+          0,
+          0,
+          0,
+          0
+        )
       ).toISOString();
       const end = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate() + 1,
-        0,
-        0,
-        0,
-        0
+        Date.UTC(
+          nowBA.getUTCFullYear(),
+          nowBA.getUTCMonth(),
+          nowBA.getUTCDate() + 1,
+          0,
+          0,
+          0,
+          0
+        )
       ).toISOString();
 
       const { data: existing, error: selError } = await supabase
@@ -123,6 +129,8 @@ export default function FormPercepcionEsfuerzo() {
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: false,
+      timeZone: "America/Argentina/Buenos_Aires",
     });
   };
 
