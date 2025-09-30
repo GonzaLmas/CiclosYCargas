@@ -21,19 +21,16 @@ body,
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   --vh: 1vh;
+  --vw: 1vw;
 }
 
-/* Ensure the page uses the visible viewport height on mobile (iOS Chrome/Safari) */
 body {
-  /* Legacy fallback */
   min-height: 100vh;
-  /* JS fallback using --vh for iOS engines lacking dvh/svh */
   min-height: calc(var(--vh, 1vh) * 100);
-  /* Modern viewport units */
   min-height: 100svh;
   min-height: 100dvh;
-  /* Prevent content being obscured by bottom bars/notches */
   padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: hidden;
 }
 
 a {
@@ -132,7 +129,6 @@ button {
   transform: none;
 }
 
-/* Unified form field styles */
 .input-field,
 .select-input,
 .date-input {
