@@ -24,12 +24,17 @@ body,
   --vw: 1vw;
 }
 
+html {
+  scroll-padding-top: env(safe-area-inset-top);
+}
+
 body {
   min-height: 100vh;
   min-height: calc(var(--vh, 1vh) * 100);
   min-height: 100svh;
   min-height: 100dvh;
   padding-bottom: env(safe-area-inset-bottom);
+  padding-top: env(safe-area-inset-top);
   overflow-x: hidden;
 }
 

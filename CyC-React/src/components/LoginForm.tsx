@@ -235,7 +235,7 @@ export default function LoginForm() {
                     disabled={isResetting}
                     className="btn-action"
                   >
-                    {isResetting ? "Enviando enlace..." : "Enviar enlace"}
+                    {isResetting ? "Enviando enlace..." : "Reenviar enlace"}
                   </button>
                   <button
                     type="button"
