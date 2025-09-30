@@ -22,12 +22,12 @@ export default function Navbar() {
 
   const navItemsPF = [
     {
-      name: "Jugadoras Aptas",
+      name: "Jugadoras Aptas 2",
       href: "/jugadorasaptas",
       current: location.pathname === "/jugadorasaptas",
     },
     {
-      name: "Percepción del Entrenamiento",
+      name: "Percepción del Entrenamiento 2",
       href: "/jugadorasesfuerzo",
       current: location.pathname === "/jugadorasesfuerzo",
     },
