@@ -38,6 +38,11 @@ body {
   overflow-x: hidden;
 }
 
+.navbar {
+  padding-top: env(safe-area-inset-top);
+  padding-top: constant(safe-area-inset-top); /* soporte para iOS viejos */
+}
+
 a {
   font-weight: 500;
   color: #646cff;
