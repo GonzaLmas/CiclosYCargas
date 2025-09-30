@@ -12,6 +12,7 @@ import Layout from "./components/Layout.js";
 import Registro from "./components/Registro";
 import CompletarDatos from "./components/CompletarDatos";
 import ResetPassword from "./components/ResetPassword";
+import JugadorasEsfuerzo from "./components/JugadorasEsfuerzo";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
       <Route path="/navbar" element={<Navbar />} />
       <Route element={<Layout />}>
         <Route path="/jugadorasaptas" element={<JugadorasAptas />} />
+        <Route path="/jugadorasesfuerzo" element={<JugadorasEsfuerzo />} />
         <Route path="/tiposemana" element={<TipoSemana />} />
         <Route path="/semanatrabajar" element={<SemanaTrabajar />} />
         <Route path="/formjugadora" element={<FormJugadoraMensual />} />

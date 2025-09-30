@@ -27,6 +27,11 @@ export default function Navbar() {
       current: location.pathname === "/jugadorasaptas",
     },
     {
+      name: "Percepción del Entrenamiento",
+      href: "/jugadorasesfuerzo",
+      current: location.pathname === "/jugadorasesfuerzo",
+    },
+    {
       name: "Tipo de Semana",
       href: "/tiposemana",
       current: location.pathname === "/tiposemana",
