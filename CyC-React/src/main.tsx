@@ -4,6 +4,9 @@ import "./index.css";
 import App from "./App.tsx";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
 import { startVersionCheck } from "./services/versionCheck";
+import { startViewportHeightFix } from "./services/viewport";
+
+startViewportHeightFix();
 
 if (import.meta.env.PROD) {
   startVersionCheck(120000);

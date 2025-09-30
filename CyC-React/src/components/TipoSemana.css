@@ -2,7 +2,14 @@
   width: 100%;
   padding: 1rem;
   background-color: #1a1a1a;
+  /* Height handling across mobile browsers (iOS Chrome/Safari) */
+  /* Fallback for legacy */
   min-height: 100vh;
+  /* JS fallback via --vh for iOS engines lacking dvh/svh */
+  min-height: calc(var(--vh, 1vh) * 100);
+  /* Modern viewport units */
+  min-height: 100svh;
+  min-height: 100dvh;
   color: rgba(255, 255, 255, 0.87);
   font-family: inherit;
   box-sizing: border-box;

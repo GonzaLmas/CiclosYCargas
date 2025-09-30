@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+:root,
+html,
+body,
+#root {
+  height: 100%;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -13,6 +20,20 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --vh: 1vh;
+}
+
+/* Ensure the page uses the visible viewport height on mobile (iOS Chrome/Safari) */
+body {
+  /* Legacy fallback */
+  min-height: 100vh;
+  /* JS fallback using --vh for iOS engines lacking dvh/svh */
+  min-height: calc(var(--vh, 1vh) * 100);
+  /* Modern viewport units */
+  min-height: 100svh;
+  min-height: 100dvh;
+  /* Prevent content being obscured by bottom bars/notches */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 a {
