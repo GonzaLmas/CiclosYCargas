@@ -1,11 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 import Alert from "./Alert";
-import {
-  validateEmail,
-  translateSupabaseResetError,
-} from "../utils/authHelpers";
+import { useLoginFormLogic } from "./LoginForm";
 
 const style = document.createElement("style");
 style.textContent = `
@@ -20,92 +14,28 @@ style.textContent = `
 document.head.appendChild(style);
 
 export default function LoginForm() {
-  const navigate = useNavigate();
-  const { login, loading: authLoading, resetPassword } = useAuth();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [showResetModal, setShowResetModal] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [resetError, setResetError] = useState<string | null>(null);
-  const [resetInfo, setResetInfo] = useState<string | null>(null);
-  const [isResetting, setIsResetting] = useState(false);
-
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!email.trim() || !password.trim()) {
-      setError("Por favor, complete todos los campos");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const user = await login(email, password);
-      if (!user) {
-        setError("Email o contraseña incorrectos");
-        setPassword("");
-        return;
-      }
-
-      const userRole = user.user_metadata?.role;
-      if (userRole === "PF") {
-        navigate("/jugadorasaptas");
-      } else if (userRole === "Jugadora") {
-        navigate("/formpercepcion");
-      } else {
-        navigate("/navbar");
-      }
-    } catch (err: any) {
-      setError("Email o contraseña incorrectos. Intente de nuevo por favor");
-      setPassword("");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRegistro = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    navigate("/registro");
-  };
-
-  const handleVolver = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    navigate("/navbar");
-  };
-  const handleForgotPassword = (
-    e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>
-  ) => {
-    e.preventDefault();
-    setResetEmail("");
-    setResetError(null);
-    setResetInfo(null);
-    setShowResetModal(true);
-  };
-
-  const handleSendReset = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setResetError(null);
-    setResetInfo(null);
-    const emailError = validateEmail(resetEmail);
-    if (emailError) return setResetError(emailError);
-    setIsResetting(true);
-    try {
-      await resetPassword(resetEmail.trim());
-      setResetInfo(
-        "Si el email existe, te enviamos un enlace para restablecer la contraseña. Revisá tu bandeja de entrada y spam."
-      );
-    } catch (err: any) {
-      setResetError(translateSupabaseResetError(err?.message));
-    } finally {
-      setIsResetting(false);
-    }
-  };
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    error,
+    isLoading,
+    authLoading,
+    showResetModal,
+    setShowResetModal,
+    resetEmail,
+    setResetEmail,
+    resetError,
+    resetInfo,
+    isResetting,
+    handleLogin,
+    handleRegistro,
+    handleVolver,
+    handleGoogleLogin,
+    handleForgotPassword,
+    handleSendReset,
+  } = useLoginFormLogic();
 
   return (
     <div className="container mx-auto mt-10 px-4">
@@ -173,6 +103,52 @@ export default function LoginForm() {
                   </button>
                 </div>
               </form>
+
+              <div className="mt-6">
+                <div className="relative flex items-center justify-center">
+                  <div className="h-px bg-gray-700 w-full" />
+                  <span className="px-3 text-xs text-gray-400 bg-gray-800 absolute">
+                    o
+                  </span>
+                </div>
+                <div className="flex justify-center mt-6">
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    disabled={authLoading}
+                    className="flex items-center gap-2 px-4 py-2 rounded-md border transition-colors disabled:opacity-60"
+                    style={{
+                      backgroundColor: "#ffffff",
+                      color: "#111827",
+                      borderColor: "#e5e7eb",
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 48 48"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        fill="#FFC107"
+                        d="M43.611 20.083H42V20H24v8h11.303C33.602 32.091 29.223 35 24 35c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.156 7.961 3.039l5.657-5.657C34.869 5.053 29.706 3 24 3 12.955 3 4 11.955 4 23s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.651-.389-3.917z"
+                      />
+                      <path
+                        fill="#FF3D00"
+                        d="M6.306 14.691l6.571 4.819C14.294 16.108 18.74 13 24 13c3.059 0 5.842 1.156 7.961 3.039l5.657-5.657C34.869 5.053 29.706 3 24 3 16.318 3 9.656 7.337 6.306 14.691z"
+                      />
+                      <path
+                        fill="#4CAF50"
+                        d="M24 43c5.166 0 9.86-1.977 13.409-5.191l-6.19-5.238C29.223 35 24 35 24 35c-5.202 0-9.567-2.888-11.289-7.001l-6.552 5.047C9.474 40.556 16.227 43 24 43z"
+                      />
+                      <path
+                        fill="#1976D2"
+                        d="M43.611 20.083H42V20H24v8h11.303c-1.347 3.091-4.726 7-11.303 7 0 0 5.223 0 7.219-2.429l6.19 5.238C35.889 40.772 44 36 44 23c0-1.341-.138-2.651-.389-3.917z"
+                      />
+                    </svg>
+                    Ingresar con Google
+                  </button>
+                </div>
+              </div>
 
               <div className="mt-4 text-center">
                 <button

@@ -1,6 +1,6 @@
 import "./App.css";
 import LoginForm from "./components/LoginForm";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import JugadorasAptas from "./components/JugadorasAptas";
 import Index from "./components/Index.jsx";
@@ -13,8 +13,30 @@ import Registro from "./components/Registro";
 import CompletarDatos from "./components/CompletarDatos";
 import ResetPassword from "./components/ResetPassword";
 import JugadorasEsfuerzo from "./components/JugadorasEsfuerzo";
+import { useEffect } from "react";
+import { useAuth } from "./contexts/AuthContext";
 
 function App() {
+  const { user, role, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) return;
+
+    const publicPaths = new Set(["/", "/login", "/registro"]);
+    if (!publicPaths.has(location.pathname)) return;
+
+    if (role === "PF") {
+      navigate("/jugadorasaptas", { replace: true });
+    } else if (role === "Jugadora") {
+      navigate("/formpercepcion", { replace: true });
+    } else {
+      navigate("/navbar", { replace: true });
+    }
+  }, [user, role, loading, location.pathname, navigate]);
+
   return (
     <Routes>
       <Route path="/" element={<Index />} />

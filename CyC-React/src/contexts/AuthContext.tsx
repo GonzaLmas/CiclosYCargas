@@ -18,6 +18,7 @@ type AuthContextType = {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -95,6 +96,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw new Error(error.message);
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw new Error(error.message);
+      // Redirección/estado será manejado por onAuthStateChange
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const value: AuthContextType = useMemo(
     () => ({
       user,
@@ -104,8 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       resetPassword,
       updatePassword,
+      loginWithGoogle,
     }),
-    [user, role, loading, login, logout, resetPassword, updatePassword]
+    [user, role, loading, login, logout, resetPassword, updatePassword, loginWithGoogle]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
