@@ -1,5 +1,5 @@
 import Alert from "./Alert";
-import { useLoginFormLogic } from "./LoginForm";
+import { useLoginFormLogic } from "../services/LoginForm.ts";
 
 const style = document.createElement("style");
 style.textContent = `

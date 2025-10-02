@@ -106,7 +106,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
       if (error) throw new Error(error.message);
-      // Redirección/estado será manejado por onAuthStateChange
     } finally {
       setLoading(false);
     }
@@ -123,7 +122,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updatePassword,
       loginWithGoogle,
     }),
-    [user, role, loading, login, logout, resetPassword, updatePassword, loginWithGoogle]
+    [
+      user,
+      role,
+      loading,
+      login,
+      logout,
+      resetPassword,
+      updatePassword,
+      loginWithGoogle,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

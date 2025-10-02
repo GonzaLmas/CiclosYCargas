@@ -147,6 +147,14 @@ export default function Navbar() {
 
               <MenuItems className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-gray-800 py-1 outline -outline-offset-1 outline-white/10">
                 <MenuItem>
+                  <Link
+                    to="/editar-perfil"
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5"
+                  >
+                    Editar Perfil
+                  </Link>
+                </MenuItem>
+                <MenuItem>
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5"

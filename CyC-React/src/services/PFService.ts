@@ -7,6 +7,7 @@ interface DatabasePF {
   Email: string;
   Division: string | null;
   IdClub: string | null;
+  FecProxEditPerfil: string | null;
 }
 
 export type PF = DatabasePF;
@@ -24,6 +25,7 @@ const toPF = (data: any): PF => ({
   Email: data.Email || "",
   Division: data.Division || null,
   IdClub: data.IdClub || null,
+  FecProxEditPerfil: data.FecProxEditPerfil || null,
 });
 
 export async function getPFs(): Promise<PF[]> {

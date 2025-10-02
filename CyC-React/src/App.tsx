@@ -1,5 +1,5 @@
 import "./App.css";
-import LoginForm from "./components/LoginForm";
+import LoginForm from "./components/LoginForm.tsx";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import JugadorasAptas from "./components/JugadorasAptas";
@@ -13,6 +13,7 @@ import Registro from "./components/Registro";
 import CompletarDatos from "./components/CompletarDatos";
 import ResetPassword from "./components/ResetPassword";
 import JugadorasEsfuerzo from "./components/JugadorasEsfuerzo";
+import EditarPerfil from "./components/EditarPerfil";
 import { useEffect } from "react";
 import { useAuth } from "./contexts/AuthContext";
 
@@ -53,6 +54,7 @@ function App() {
         <Route path="/semanatrabajar" element={<SemanaTrabajar />} />
         <Route path="/formjugadora" element={<FormJugadoraMensual />} />
         <Route path="/formpercepcion" element={<FormPercepcion />} />
+        <Route path="/editar-perfil" element={<EditarPerfil />} />
       </Route>
     </Routes>
   );

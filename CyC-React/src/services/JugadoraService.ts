@@ -10,6 +10,7 @@ export type Jugadora = {
   Division: string | null;
   Activa: boolean | null;
   Indicador: number | null;
+  FecProxEditPerfil: string | null;
 };
 
 export type CreateJugadoraDTO = Omit<Jugadora, "IdJugadora"> & {
@@ -25,7 +26,7 @@ export async function getJugadoras(): Promise<Jugadora[]> {
       .order("Apellido", { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(toJugadora);
   } catch (error) {
     console.error("Error al obtener las jugadoras:", error);
     throw error;
@@ -41,7 +42,7 @@ export async function getJugadorasAptas(): Promise<Jugadora[]> {
       .order("Apellido", { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(toJugadora);
   } catch (error) {
     console.error("Error al obtener las jugadoras aptas:", error);
     throw error;
@@ -57,7 +58,7 @@ export async function getJugadoraById(id: string): Promise<Jugadora | null> {
       .single();
 
     if (error) throw error;
-    return data;
+    return data ? toJugadora(data) : null;
   } catch (error) {
     console.error("Error al obtener la jugadora:", error);
     throw error;
@@ -78,6 +79,7 @@ export async function createJugadora(
       Division: jugadora.Division,
       Activa: jugadora.Activa ?? true,
       Indicador: jugadora.Indicador ?? 0,
+      FecProxEditPerfil: jugadora.FecProxEditPerfil ?? null,
     };
 
     const { data, error } = await supabase
@@ -87,7 +89,7 @@ export async function createJugadora(
       .single();
 
     if (error) throw error;
-    return data;
+    return toJugadora(data);
   } catch (error) {
     console.error("Error al crear la jugadora:", error);
     throw error;
@@ -112,7 +114,7 @@ export async function updateJugadora(
       return null;
     }
 
-    return data[0];
+    return toJugadora(data[0]);
   } catch (error) {
     console.error("Error al actualizar la jugadora:", error);
     throw error;
@@ -138,4 +140,19 @@ export async function deleteJugadora(
     console.error("Error al eliminar la jugadora:", error);
     throw error;
   }
+}
+
+function toJugadora(data: any): Jugadora {
+  return {
+    IdJugadora: data.IdJugadora,
+    Nombre: data.Nombre ?? "",
+    Apellido: data.Apellido ?? "",
+    Email: data.Email ?? "",
+    Edad: data.Edad ?? null,
+    IdClub: data.IdClub ?? null,
+    Division: data.Division ?? null,
+    Activa: data.Activa ?? null,
+    Indicador: data.Indicador ?? null,
+    FecProxEditPerfil: data.FecProxEditPerfil ?? null,
+  };
 }
