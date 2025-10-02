@@ -77,6 +77,7 @@ export default function CompletarDatos() {
         Division: form.Division,
         Activa: true,
         Indicador: 0,
+        FecProxEditPerfil: null,
       };
 
       if (!jugadoraExistente) {

@@ -146,6 +146,7 @@ export default function RegistroUsuario() {
           Division: form.Division,
           Activa: true,
           Indicador: 0,
+          FecProxEditPerfil: null,
         });
       } else if (esPF) {
         await createPF({
@@ -155,6 +156,7 @@ export default function RegistroUsuario() {
           Email: form.Email,
           IdClub: form.IdClub,
           Division: form.Division,
+          FecProxEditPerfil: null,
         });
       }
 
