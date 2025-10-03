@@ -134,3 +134,56 @@ export async function getEsfuerzoDataForPF(
 
   return { jugadoras: jugadorasPF, esfuerzoById, fechaById, totalSemanaById };
 }
+
+export async function getJugadorasParaPF(userId: string): Promise<Jugadora[]> {
+  if (!userId) return [];
+  const pf = await getPFById(userId);
+  if (!pf || !pf.IdClub || !pf.Division) return [];
+  const all = await getJugadorasAptas();
+  return (all || []).filter(
+    (j) => j.IdClub === pf.IdClub && j.Division === pf.Division
+  );
+}
+
+export type PercepcionItem = {
+  FechaCarga: string;
+  VariableE: number | null;
+};
+
+export async function getPercepcionHistorial(
+  jugadoraId: string,
+  fromISO?: string,
+  toISO?: string
+): Promise<PercepcionItem[]> {
+  if (!jugadoraId) return [];
+  let q = supabase
+    .from("Variables")
+    .select("FechaCarga, VariableE")
+    .eq("IdUsuario", jugadoraId);
+
+  if (fromISO) q = q.gte("FechaCarga", fromISO);
+  if (toISO) q = q.lt("FechaCarga", toISO);
+
+  q = q.order("FechaCarga", { ascending: true });
+
+  const { data, error } = await q;
+  if (error) throw error as any;
+  return (data || []).map((r: any) => ({
+    FechaCarga: r.FechaCarga,
+    VariableE:
+      typeof r.VariableE === "number"
+        ? r.VariableE
+        : r.VariableE == null
+        ? null
+        : Number(r.VariableE),
+  }));
+}
+
+export function getMonthRangeBA(year: number, month0: number) {
+  const BA_OFFSET_HOURS = 3;
+  const startBA = new Date(year, month0, 1, 0, 0, 0, 0);
+  const endBA = new Date(year, month0 + 1, 1, 0, 0, 0, 0);
+  const startUTC = new Date(startBA.getTime() + BA_OFFSET_HOURS * 3600 * 1000);
+  const endUTC = new Date(endBA.getTime() + BA_OFFSET_HOURS * 3600 * 1000);
+  return { startISO: startUTC.toISOString(), endISO: endUTC.toISOString() };
+}

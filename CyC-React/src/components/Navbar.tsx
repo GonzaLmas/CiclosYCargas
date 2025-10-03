@@ -5,6 +5,7 @@ import {
 } from "@headlessui/react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -30,6 +31,11 @@ export default function Navbar() {
       name: "Percepción del Entrenamiento",
       href: "/jugadorasesfuerzo",
       current: location.pathname === "/jugadorasesfuerzo",
+    },
+    {
+      name: "Historial de Percepción",
+      href: "/historial-percepcion",
+      current: location.pathname === "/historial-percepcion",
     },
     {
       name: "Tipo de Semana",
@@ -67,7 +73,17 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
-            <DisclosureButton className="cursor-pointer group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-white/5 hover:text-white focus:outline-2 focus:-outline-offset-1 focus:outline-indigo-500">
+            <DisclosureButton
+              className="cursor-pointer group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-white/5 hover:text-white focus:outline-2 focus:-outline-offset-1 focus:outline-indigo-500"
+              onClick={(_e) => {
+                const userMenu = document.querySelector(
+                  '[data-headlessui-state="open"]'
+                );
+                if (userMenu) {
+                  (userMenu as HTMLElement).click();
+                }
+              }}
+            >
               <span className="absolute -inset-0.5" />
               <span className="sr-only">Open main menu</span>
               <Bars3Icon
@@ -109,7 +125,21 @@ export default function Navbar() {
 
           <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
             <Menu as="div" className="relative ml-3">
-              <MenuButton className="cursor-pointer relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+              <MenuButton
+                className="cursor-pointer relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                onClick={(e) => {
+                  const mobileMenuButton = document.querySelector(
+                    '[aria-label="Open main menu"]'
+                  );
+                  if (
+                    mobileMenuButton &&
+                    mobileMenuButton.getAttribute("data-headlessui-state") ===
+                      "open"
+                  ) {
+                    (mobileMenuButton as HTMLElement).click();
+                  }
+                }}
+              >
                 <span className="absolute -inset-1.5" />
                 <span className="sr-only">Open user menu</span>
                 <div className="flex items-center">
@@ -117,7 +147,8 @@ export default function Navbar() {
                     const avatarUrl =
                       (user?.user_metadata as any)?.avatar_url ||
                       (user?.user_metadata as any)?.picture ||
-                      (user as any)?.identities?.[0]?.identity_data?.avatar_url ||
+                      (user as any)?.identities?.[0]?.identity_data
+                        ?.avatar_url ||
                       (user as any)?.identities?.[0]?.identity_data?.picture;
                     if (avatarUrl) {
                       return (

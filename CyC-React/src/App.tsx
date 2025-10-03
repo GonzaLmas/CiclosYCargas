@@ -13,6 +13,7 @@ import Registro from "./components/Registro";
 import CompletarDatos from "./components/CompletarDatos";
 import ResetPassword from "./components/ResetPassword";
 import JugadorasEsfuerzo from "./components/JugadorasEsfuerzo";
+import HistorialPercepcion from "./components/HistorialPercepcion";
 import EditarPerfil from "./components/EditarPerfil";
 import { useEffect } from "react";
 import { useAuth } from "./contexts/AuthContext";
@@ -50,6 +51,7 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/jugadorasaptas" element={<JugadorasAptas />} />
         <Route path="/jugadorasesfuerzo" element={<JugadorasEsfuerzo />} />
+        <Route path="/historial-percepcion" element={<HistorialPercepcion />} />
         <Route path="/tiposemana" element={<TipoSemana />} />
         <Route path="/semanatrabajar" element={<SemanaTrabajar />} />
         <Route path="/formjugadora" element={<FormJugadoraMensual />} />
