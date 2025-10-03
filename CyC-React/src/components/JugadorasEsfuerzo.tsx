@@ -224,13 +224,13 @@ export default function JugadorasEsfuerzo() {
             : "-"}
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
-          {j.IdJugadora ? formatDateTime(fechaById[j.IdJugadora] ?? null) : "-"}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap">
           {formatName(j.Apellido as string | null | undefined)}
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
           {formatName(j.Nombre as string | null | undefined)}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          {j.IdJugadora ? formatDateTime(fechaById[j.IdJugadora] ?? null) : "-"}
         </td>
         <td className="px-6 py-4 whitespace-nowrap">{j.Division || "-"}</td>
       </tr>
@@ -280,9 +280,6 @@ export default function JugadorasEsfuerzo() {
                   />
                 </span>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider select-none">
-                Fecha de Carga
-              </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
                 onClick={() => onSort("Apellido")}
@@ -310,6 +307,9 @@ export default function JugadorasEsfuerzo() {
                     dir={sortKey === "Nombre" ? sortDir : "asc"}
                   />
                 </span>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider select-none">
+                Fecha de Carga
               </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
