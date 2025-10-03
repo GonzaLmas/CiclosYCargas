@@ -5,7 +5,6 @@ import {
 } from "@headlessui/react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -127,7 +126,7 @@ export default function Navbar() {
             <Menu as="div" className="relative ml-3">
               <MenuButton
                 className="cursor-pointer relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-                onClick={(e) => {
+                onClick={(_e) => {
                   const mobileMenuButton = document.querySelector(
                     '[aria-label="Open main menu"]'
                   );
