@@ -15,6 +15,12 @@ import {
 import "./TipoSemana.css";
 import Alert from "./Alert";
 import supabase from "../services/SupabaseService";
+import {
+  parseDate,
+  getPreviousWeekday,
+  formatYMD,
+  formatDate,
+} from "../services/DateUtils";
 
 const TipoSemana = () => {
   const { user } = useAuth();
@@ -24,7 +30,7 @@ const TipoSemana = () => {
     text: string;
     type: "success" | "error";
   } | null>(null);
-  const [_isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [competencyDate, setCompetencyDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -117,28 +123,11 @@ const TipoSemana = () => {
 
       setSubcapacidades(newSubcapacidades);
     };
-
     if (capacidades.length > 0) {
       cargarSubcapacidades();
     }
   }, [capacidades]);
-
-  const parseDate = (dateString: string) => {
-    if (dateString.includes("/")) {
-      const [day, month, year] = dateString.split("/").map(Number);
-      return new Date(year, month - 1, day);
-    } else if (dateString.includes("-")) {
-      const [year, month, day] = dateString.split("-").map(Number);
-      return new Date(year, month - 1, day);
-    }
-    throw new Error("Formato de fecha no válido");
-  };
-
-  const formatDate = (date: Date) =>
-    `${String(date.getDate()).padStart(2, "0")}/${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}/${date.getFullYear()}`;
-
+  
   const handleCapacityChange = (dayNum: number, value: string) => {
     setDayCapacities({ ...dayCapacities, [dayNum]: value });
     setDayProperties({ ...dayProperties, [dayNum]: "" });
@@ -146,7 +135,6 @@ const TipoSemana = () => {
   const handlePropertyChange = (dayNum: number, value: string) => {
     setDayProperties({ ...dayProperties, [dayNum]: value });
   };
-
   const handleGuardar = async () => {
     if (!selectedWeek) {
       setMessage({ text: "Por favor, seleccione una semana", type: "error" });
@@ -196,13 +184,16 @@ const TipoSemana = () => {
       for (let i = 1; i <= selectedWeek; i++) {
         const capacitiesId = dayCapacities[i];
         const subcapacidadId = dayProperties[i];
-        const fechaEntrenamiento = new Date(competencyDate);
-        fechaEntrenamiento.setDate(fechaEntrenamiento.getDate() - i);
+
+        const fechaEntrenamiento = getPreviousWeekday(
+          new Date(parseDate(competencyDate)),
+          i
+        );
 
         registros.push({
           Division: pfData.division,
           FechaCompetencia: competencyDate,
-          FechaEntrenamiento: fechaEntrenamiento.toISOString().split("T")[0],
+          FechaEntrenamiento: formatYMD(fechaEntrenamiento),
           Capacidad: capacitiesId || null,
           SubCapacidad: subcapacidadId || null,
           IdClub: pfData.idClub,
@@ -343,8 +334,11 @@ const TipoSemana = () => {
             <select
               id="week-select"
               value={selectedWeek}
-              onChange={(e) => setSelectedWeek(Number(e.target.value))}
-              disabled={!competencyDate}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedWeek(val === "" ? "" : Number(val));
+              }}
+              disabled={!competencyDate || isLoading}
               className="select-input"
             >
               {!selectedWeek && <option value="">Seleccione semana</option>}
@@ -363,8 +357,10 @@ const TipoSemana = () => {
         {selectedWeek &&
           Array.from({ length: selectedWeek }, (_, i) => {
             const dayNum = i + 1;
-            const fechaDia = new Date(parseDate(competencyDate));
-            fechaDia.setDate(fechaDia.getDate() - dayNum);
+            const fechaDia = getPreviousWeekday(
+              new Date(parseDate(competencyDate)),
+              dayNum
+            );
 
             return (
               <div key={dayNum} className="day-card">
@@ -373,7 +369,7 @@ const TipoSemana = () => {
                 </h3>
 
                 <div className="field-group">
-                  <label>Capacidad</label>
+                  <label style={{ color: "#6e74e1" }}>CAPACIDAD</label>
                   <div className="select-wrapper">
                     <select
                       value={dayCapacities[dayNum] || ""}
@@ -395,7 +391,7 @@ const TipoSemana = () => {
                 </div>
 
                 <div className="field-group">
-                  <label>Propiedad</label>
+                  <label style={{ color: "#6e74e1" }}>SUBCAPACIDAD</label>
                   <div className="select-wrapper">
                     <select
                       value={dayProperties[dayNum] || ""}
@@ -470,7 +466,7 @@ const TipoSemana = () => {
           type="button"
           onClick={handleGuardar}
           className="btn-action flex items-center gap-2"
-          disabled={!selectedWeek || loading || saving}
+          disabled={!selectedWeek || loading || saving || isLoading}
         >
           {saving ? (
             <>

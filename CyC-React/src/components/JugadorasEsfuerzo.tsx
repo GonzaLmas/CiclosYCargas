@@ -36,7 +36,7 @@ export default function JugadorasEsfuerzo() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  type SortKey = "Esfuerzo" | "Total" | "Nombre" | "Apellido" | "Division";
+  type SortKey = "Esfuerzo" | "Total" | "Nombre" | "Apellido" | "Division" | "FechaCarga";
   const [sortKey, setSortKey] = useState<SortKey>("Esfuerzo");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const SortIcon = ({
@@ -138,6 +138,15 @@ export default function JugadorasEsfuerzo() {
         if (vb == null) return -1;
         if (va < vb) return -1 * dir;
         if (va > vb) return 1 * dir;
+        return 0;
+      }
+      if (sortKey === "FechaCarga") {
+        const aId = a.IdJugadora ?? "";
+        const bId = b.IdJugadora ?? "";
+        const fechaA = fechaById[aId] ? new Date(fechaById[aId] as string).getTime() : 0;
+        const fechaB = fechaById[bId] ? new Date(fechaById[bId] as string).getTime() : 0;
+        if (fechaA < fechaB) return -1 * dir;
+        if (fechaA > fechaB) return 1 * dir;
         return 0;
       }
 
@@ -308,8 +317,19 @@ export default function JugadorasEsfuerzo() {
                   />
                 </span>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider select-none">
-                Fecha de Carga
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"
+                onClick={() => onSort("FechaCarga")}
+                role="button"
+                aria-label="Ordenar por fecha de carga"
+              >
+                <span className="inline-flex items-center gap-2">
+                  Fecha de Carga
+                  <SortIcon
+                    active={sortKey === "FechaCarga"}
+                    dir={sortKey === "FechaCarga" ? sortDir : "desc"}
+                  />
+                </span>
               </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider cursor-pointer select-none"

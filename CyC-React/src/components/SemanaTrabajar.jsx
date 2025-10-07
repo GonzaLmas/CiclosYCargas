@@ -6,6 +6,12 @@ import {
   getCapacidadesByIds,
   getSubcapacidadesByIds,
 } from "../services/TipoSemanaService";
+import {
+  parseDate,
+  isWeekday,
+  formatDateWithDayName,
+  formatDateShortEs,
+} from "../services/DateUtils";
 
 const Competencia = () => {
   const { user, loading: authLoading } = useAuth();
@@ -30,10 +36,15 @@ const Competencia = () => {
         setError("");
         const data = await getTipoSemanaByPF(user.id);
         setRegistros(data);
+
         const fechasUnicas = Array.from(
           new Set(data.map((d) => d.FechaCompetencia))
-        ).sort((a, b) => parseDate(b) - parseDate(a));
+        )
+          .filter(Boolean)
+          .sort((a, b) => parseDate(b) - parseDate(a));
+
         setFechas(fechasUnicas);
+
         if (!fechaCompetencia && fechasUnicas.length > 0) {
           setFechaCompetencia(fechasUnicas[0]);
         }
@@ -67,26 +78,14 @@ const Competencia = () => {
   };
 
   const handleChangeFecha = (e) => {
-    setFechaCompetencia(e.target.value);
+    const selectedValue = e.target.value;
+    console.log("Selected date:", selectedValue);
+    setFechaCompetencia(selectedValue);
   };
-
-  const parseDate = (str) => {
-    if (!str) return new Date(NaN);
-    const [y, m, d] = String(str)
-      .split("-")
-      .map((v) => parseInt(v, 10));
-    if (!y || !m || !d) return new Date(str);
-    return new Date(y, m - 1, d);
-  };
-  const formatDate = (date) =>
-    date.toLocaleDateString("es-AR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
 
   const registrosSeleccion = registros
     .filter((r) => r.FechaCompetencia === fechaCompetencia)
+    .filter((r) => isWeekday(parseDate(r.FechaEntrenamiento)))
     .sort(
       (a, b) =>
         parseDate(a.FechaEntrenamiento) - parseDate(b.FechaEntrenamiento)
@@ -106,20 +105,45 @@ const Competencia = () => {
         <label htmlFor="fechaCompetencia">
           Seleccione una fecha de competencia:
         </label>
-        <select
-          id="fechaCompetencia"
-          value={fechaCompetencia}
-          onChange={handleChangeFecha}
-          className="select-input"
-          disabled={loading}
-        >
-          {!fechaCompetencia && <option value="">Seleccione una fecha</option>}
-          {fechas.map((fecha) => (
-            <option key={fecha} value={fecha}>
-              {formatDate(parseDate(fecha))}
-            </option>
-          ))}
-        </select>
+        <div className="select-wrapper">
+          <select
+            id="fechaCompetencia"
+            value={fechaCompetencia || ""}
+            onChange={handleChangeFecha}
+            className="select-input"
+            disabled={loading || !fechas.length}
+          >
+            {!fechas.length ? (
+              <option value="">Cargando fechas...</option>
+            ) : !fechaCompetencia ? (
+              <option value="">Seleccione una fecha</option>
+            ) : null}
+            {fechas.map((fecha) => {
+              if (!fecha) return null; // Skip invalid dates
+              const date = parseDate(fecha);
+              const formattedDate = formatDateShortEs(date);
+              return (
+                <option key={fecha} value={fecha}>
+                  {formattedDate}
+                </option>
+              );
+            })}
+          </select>
+          <svg
+            className="select-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
 
         {loading && <p>Cargando...</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
@@ -134,18 +158,20 @@ const Competencia = () => {
                 const fechaDia = parseDate(it.FechaEntrenamiento);
                 return (
                   <div key={idx} className="day-card">
-                    <h3>
-                      Día -{d} | {formatDate(fechaDia)}
-                    </h3>
+                    <h3>{formatDateWithDayName(fechaDia)}</h3>
                     <div className="field-group">
-                      <label>Capacidad</label>
-                      <p>
+                      <label className="uppercase" style={{ color: "#6e74e1" }}>
+                        Capacidad
+                      </label>
+                      <p className="">
                         {(it.Capacidad && capMap[it.Capacidad]) ||
                           (it.Capacidad ? it.Capacidad : "No asignado")}
                       </p>
                     </div>
                     <div className="field-group">
-                      <label>Subcapacidad</label>
+                      <label className="uppercase" style={{ color: "#6e74e1" }}>
+                        Subcapacidad
+                      </label>
                       <p>
                         {(it.SubCapacidad && subcapMap[it.SubCapacidad]) ||
                           (it.SubCapacidad ? it.SubCapacidad : "No asignado")}
@@ -159,11 +185,7 @@ const Competencia = () => {
         )}
 
         <div className="form-actions">
-          <button
-            type="button"
-            onClick={handleVolver}
-            className="btn-back"
-          >
+          <button type="button" onClick={handleVolver} className="btn-back">
             Volver
           </button>
         </div>
