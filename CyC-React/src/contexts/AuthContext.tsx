@@ -5,6 +5,7 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 import type { ReactNode } from "react";
 import supabase from "../services/SupabaseService";
@@ -27,6 +28,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const expiryTimeoutRef = useRef<number | null>(null);
+
+  const clearExpiryTimer = () => {
+    if (expiryTimeoutRef.current) {
+      window.clearTimeout(expiryTimeoutRef.current);
+      expiryTimeoutRef.current = null;
+    }
+  };
+
+  const scheduleExpirySignOut = useCallback((session: Session | null) => {
+    clearExpiryTimer();
+    const expiresAtSec = session?.expires_at;
+    if (!expiresAtSec) return;
+    const msUntilExpiry = expiresAtSec * 1000 - Date.now();
+    if (msUntilExpiry <= 0) {
+      supabase.auth.signOut().finally(() => {
+        setUser(null);
+        setRole(null);
+      });
+      return;
+    }
+    expiryTimeoutRef.current = window.setTimeout(() => {
+      supabase.auth.signOut().finally(() => {
+        setUser(null);
+        setRole(null);
+      });
+    }, msUntilExpiry);
+  }, []);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -35,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentUser);
       setRole(currentUser?.user_metadata?.role ?? null);
       setLoading(false);
+      scheduleExpirySignOut(data.session ?? null);
     };
 
     initAuth();
@@ -45,31 +75,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentUser);
         setRole(currentUser?.user_metadata?.role ?? null);
         setLoading(false);
+        scheduleExpirySignOut(session);
       }
     );
 
     return () => {
       subscription.subscription.unsubscribe();
+      clearExpiryTimer();
     };
-  }, []);
+  }, [scheduleExpirySignOut]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw new Error(error.message);
-      if (!data.user) throw new Error("No se pudo iniciar sesión");
+  useEffect(() => {
+    const handleVisibility = async () => {
+      if (document.visibilityState === "visible") {
+        const { data } = await supabase.auth.getSession();
+        const expiresAtSec = data.session?.expires_at ?? 0;
+        if (!expiresAtSec || expiresAtSec * 1000 <= Date.now()) {
+          await supabase.auth.signOut();
+          setUser(null);
+          setRole(null);
+          clearExpiryTimer();
+        } else {
+          scheduleExpirySignOut(data.session ?? null);
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+  }, [scheduleExpirySignOut]);
 
-      setUser(data.user);
-      setRole(data.user.user_metadata?.role ?? null);
-      return data.user;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw new Error(error.message);
+        if (!data.user) throw new Error("No se pudo iniciar sesión");
+
+        setUser(data.user);
+        setRole(data.user.user_metadata?.role ?? null);
+        const { data: sessionData } = await supabase.auth.getSession();
+        scheduleExpirySignOut(sessionData.session ?? null);
+        return data.user;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [scheduleExpirySignOut]
+  );
 
   const logout = useCallback(async () => {
     setLoading(true);
@@ -78,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       setUser(null);
       setRole(null);
+      clearExpiryTimer();
     } finally {
       setLoading(false);
     }
