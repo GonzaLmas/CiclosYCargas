@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
-import { startVersionCheck } from "./services/VersionCheck.ts";
-import { startViewportHeightFix } from "./services/Viewport.ts";
+import { startVersionCheck } from "./services/versionCheck.ts";
+import { startViewportHeightFix } from "./services/viewport.ts";
 
 startViewportHeightFix();
 
