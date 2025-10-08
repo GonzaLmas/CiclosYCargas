@@ -1,10 +1,12 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
 } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import Alert from "./Alert";
 
 const navigation = [
   { name: "Entrenamientos", href: "#" },
@@ -13,6 +15,37 @@ const navigation = [
 
 export default function Index() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [pendingAlert, setPendingAlert] = useState<string | null>(null);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+
+  // Si venimos desde login con email no registrado u otro error, mostramos aviso y redirigimos a /registro
+  useEffect(() => {
+    const state = location.state as { unregistered?: boolean; alert?: string } | null;
+    if (state?.unregistered) {
+      setPendingAlert(
+        state.alert ||
+          "El email no está registrado. Serás redirigido a la página de Registro..."
+      );
+      setShouldRedirect(true);
+    } else {
+      setPendingAlert(null);
+      setShouldRedirect(false);
+    }
+    // Limpia el estado de navegación para evitar repetir el aviso si vuelve atrás
+    if (state) {
+      navigate(location.pathname, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
+
+  useEffect(() => {
+    if (!shouldRedirect) return;
+    const t = setTimeout(() => {
+      navigate("/registro", { replace: true });
+    }, 1800);
+    return () => clearTimeout(t);
+  }, [shouldRedirect, navigate]);
 
   const handleClick = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
@@ -21,6 +54,11 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      {pendingAlert && (
+        <div className="container mx-auto px-4 pt-4">
+          <Alert type="error">{pendingAlert}</Alert>
+        </div>
+      )}
       {/* Header */}
       <Disclosure
         as="header"

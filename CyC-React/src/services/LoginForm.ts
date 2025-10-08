@@ -56,6 +56,14 @@ export function useLoginFormLogic() {
     } catch (err: any) {
       setError("Email o contraseña incorrectos. Intente de nuevo por favor");
       setPassword("");
+      // Ir directamente a Registro para permitir crear cuenta cuando el email no está registrado
+      navigate("/registro", {
+        replace: true,
+        state: {
+          alert:
+            "El email no está registrado o las credenciales son inválidas. Podés crear tu cuenta a continuación.",
+        },
+      });
     } finally {
       setIsLoading(false);
     }

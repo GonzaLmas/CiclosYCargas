@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import supabase from "../services/SupabaseService";
 import { createJugadora } from "../services/JugadoraService";
 import { createPF } from "../services/PFService";
@@ -31,6 +31,7 @@ export default function RegistroUsuario() {
   const [cooldownLeft, setCooldownLeft] = useState(0);
   const [registeredEmail, setRegisteredEmail] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
   const roles = [
     //{ value: "f211f07c-4004-4575-9dbc-af8dbbf3f8d0", text: "Admin" },
@@ -234,6 +235,11 @@ export default function RegistroUsuario() {
               <h3 className="text-lg font-semibold">Registro de Usuario</h3>
             </div>
             <div className="p-6">
+              {((location.state as { alert?: string } | null)?.alert) && (
+                <Alert type="error" className="mb-4">
+                  {(location.state as { alert?: string }).alert as string}
+                </Alert>
+              )}
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 <div className="field-group">
                   <label className="block text-sm font-medium text-gray-100">

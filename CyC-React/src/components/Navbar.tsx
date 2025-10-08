@@ -62,7 +62,12 @@ export default function Navbar() {
   ];
 
   const userRole = user?.user_metadata?.role;
+  const showNavbar = userRole === "PF" || userRole === "Jugadora";
   const navigation = userRole === "PF" ? navItemsPF : navItemsJugadora;
+
+  if (!showNavbar) {
+    return null;
+  }
 
   return (
     <Disclosure
