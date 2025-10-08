@@ -119,7 +119,7 @@ const Competencia = () => {
               <option value="">Seleccione una fecha</option>
             ) : null}
             {fechas.map((fecha) => {
-              if (!fecha) return null; // Skip invalid dates
+              if (!fecha) return null;
               const date = parseDate(fecha);
               const formattedDate = formatDateShortEs(date);
               return (

@@ -56,7 +56,6 @@ export function useLoginFormLogic() {
     } catch (err: any) {
       setError("Email o contraseña incorrectos. Intente de nuevo por favor");
       setPassword("");
-      // Ir directamente a Registro para permitir crear cuenta cuando el email no está registrado
       navigate("/registro", {
         replace: true,
         state: {

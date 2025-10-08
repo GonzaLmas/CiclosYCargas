@@ -19,9 +19,11 @@ export default function Index() {
   const [pendingAlert, setPendingAlert] = useState<string | null>(null);
   const [shouldRedirect, setShouldRedirect] = useState(false);
 
-  // Si venimos desde login con email no registrado u otro error, mostramos aviso y redirigimos a /registro
   useEffect(() => {
-    const state = location.state as { unregistered?: boolean; alert?: string } | null;
+    const state = location.state as {
+      unregistered?: boolean;
+      alert?: string;
+    } | null;
     if (state?.unregistered) {
       setPendingAlert(
         state.alert ||
@@ -32,11 +34,10 @@ export default function Index() {
       setPendingAlert(null);
       setShouldRedirect(false);
     }
-    // Limpia el estado de navegación para evitar repetir el aviso si vuelve atrás
+
     if (state) {
       navigate(location.pathname, { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   useEffect(() => {
