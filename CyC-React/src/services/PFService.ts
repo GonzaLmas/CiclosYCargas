@@ -5,7 +5,6 @@ interface DatabasePF {
   Nombre: string;
   Apellido: string;
   Email: string;
-  Division: string | null;
   IdClub: string | null;
   FecProxEditPerfil: string | null;
 }
@@ -23,7 +22,6 @@ const toPF = (data: any): PF => ({
   Nombre: data.Nombre || "",
   Apellido: data.Apellido || "",
   Email: data.Email || "",
-  Division: data.Division || null,
   IdClub: data.IdClub || null,
   FecProxEditPerfil: data.FecProxEditPerfil || null,
 });
@@ -74,7 +72,6 @@ export async function createPF(pf: CreatePFDTO): Promise<PF> {
       Apellido: pf.Apellido,
       Email: pf.Email,
       IdClub: pf.IdClub,
-      Division: pf.Division,
     };
 
     const { data, error } = await supabase

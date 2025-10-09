@@ -71,10 +71,11 @@ const TipoSemana = () => {
   );
 
   const [pfData, setPfData] = useState<{
-    division: string | null;
     idPF: string;
     idClub: string | null;
   } | null>(null);
+  const [pfDivisions, setPfDivisions] = useState<string[]>([]);
+  const [selectedDivision, setSelectedDivision] = useState<string>("");
 
   useEffect(() => {
     const cargarDatosIniciales = async () => {
@@ -86,18 +87,20 @@ const TipoSemana = () => {
         if (user?.id) {
           const pfInfo = await getPFData(user.id);
           if (pfInfo) {
-            if (!pfInfo.Division) {
-              console.warn("El PF no tiene una división asignada");
+            const divisions = pfInfo.DivisionIds || [];
+            if (divisions.length === 0) {
+              console.warn("El PF no tiene divisiones asignadas");
               alert(
-                "No se encontró la división del preparador físico. Por favor, actualiza tu perfil."
+                "No se encontraron divisiones asignadas. Por favor, actualiza tu perfil."
               );
               return;
             }
             setPfData({
-              division: pfInfo.Division,
               idPF: pfInfo.IdUsuario,
               idClub: pfInfo.IdClub,
             });
+            setPfDivisions(divisions);
+            setSelectedDivision(divisions[0] || "");
           }
         }
       } catch (error) {
@@ -170,10 +173,9 @@ const TipoSemana = () => {
         });
         return;
       }
-
-      if (!pfData.division) {
+      if (!selectedDivision) {
         setMessage({
-          text: "No se encontró la división del preparador físico",
+          text: "Seleccione una división",
           type: "error",
         });
         return;
@@ -191,7 +193,7 @@ const TipoSemana = () => {
         );
 
         registros.push({
-          Division: pfData.division,
+          Division: selectedDivision,
           FechaCompetencia: competencyDate,
           FechaEntrenamiento: formatYMD(fechaEntrenamiento),
           Capacidad: capacitiesId || null,
@@ -206,6 +208,7 @@ const TipoSemana = () => {
         .from("TipoSemana")
         .select("FechaEntrenamiento, FechaCompetencia, Capacidad, SubCapacidad")
         .eq("IdPF", pfData.idPF)
+        .eq("Division", selectedDivision)
         .eq("FechaCompetencia", competencyDate)
         .in("FechaEntrenamiento", fechas)
         .order("FechaEntrenamiento", { ascending: true });
@@ -260,11 +263,13 @@ const TipoSemana = () => {
         .from("TipoSemana")
         .delete()
         .eq("IdPF", pfData.idPF)
+        .eq("Division", selectedDivision)
         .eq("FechaCompetencia", competencyDate);
       if (delError) throw delError;
 
       await createTipoSemana(
         pendingRegistros.map((r: RegistroSemana) => ({
+          Division: selectedDivision,
           FechaCompetencia: r.FechaCompetencia,
           FechaEntrenamiento: r.FechaEntrenamiento,
           Capacidad: r.Capacidad,
@@ -306,6 +311,26 @@ const TipoSemana = () => {
   return (
     <div className="competency-form">
       <div className="form-header">
+        <div className="field-group">
+          <label htmlFor="division-select">División</label>
+          <div className="select-wrapper">
+            <select
+              id="division-select"
+              value={selectedDivision}
+              onChange={(e) => setSelectedDivision(e.target.value)}
+              disabled={pfDivisions.length === 0 || isLoading}
+              className="select-input"
+            >
+              {!selectedDivision && <option value="">Seleccione división</option>}
+              {pfDivisions.map((divId) => (
+                <option key={divId} value={divId}>
+                  {divId}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="select-icon" size={20} />
+          </div>
+        </div>
         <div className="field-group">
           <label
             htmlFor="competency-date"

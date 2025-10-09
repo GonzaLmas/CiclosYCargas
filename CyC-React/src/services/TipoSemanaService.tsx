@@ -13,8 +13,8 @@ export interface Subcapacidad {
 
 export interface PFData {
   IdUsuario: string;
-  Division: string | null;
   IdClub: string | null;
+  DivisionIds: string[];
 }
 
 export async function getCapacidades(): Promise<Capacidad[]> {
@@ -52,14 +52,29 @@ export async function getSubcapacidades(
 
 export async function getPFData(userId: string): Promise<PFData | null> {
   try {
-    const { data, error } = await supabase
+    const { data: pf, error: pfError } = await supabase
       .from("PF")
-      .select("IdUsuario, Division, IdClub")
+      .select("IdUsuario, IdClub")
       .eq("IdUsuario", userId)
       .single();
 
-    if (error) throw error;
-    return data;
+    if (pfError) throw pfError;
+    if (!pf) return null;
+
+    const { data: pfDivs, error: divError } = await (supabase as any)
+      .from("PF_Division")
+      .select("Division")
+      .eq("IdPF", userId);
+
+    if (divError) throw divError;
+
+    const divisionIds = (pfDivs || []).map((r: any) => r.Division as string);
+
+    return {
+      IdUsuario: pf.IdUsuario,
+      IdClub: pf.IdClub ?? null,
+      DivisionIds: divisionIds,
+    };
   } catch (error) {
     console.error("Error al obtener datos del PF:", error);
     throw error;
@@ -74,6 +89,7 @@ export async function createTipoSemana(
     SubCapacidad?: string | null;
     IdClub?: string | null;
     IdPF: string;
+    Division: string;
   }[]
 ) {
   try {
@@ -81,41 +97,19 @@ export async function createTipoSemana(
       throw new Error("Todos los registros deben tener un IdPF válido");
     }
 
-    const { data: pfData, error: pfError } = await supabase
-      .from("PF")
-      .select("Division")
-      .in("IdUsuario", [...new Set(registros.map((r) => r.IdPF))])
-      .single();
-
-    if (pfError) throw pfError;
-
-    const division = pfData?.Division;
-    if (!division) {
-      throw new Error("No se pudo obtener la División del PF");
-    }
-
-    const registrosConDivision = registros.map((registro) => ({
-      ...registro,
-      Division: division,
-      FechaCompetencia: registro.FechaCompetencia,
-      FechaEntrenamiento: registro.FechaEntrenamiento,
-      Capacidad: registro.Capacidad || null,
-      SubCapacidad: registro.SubCapacidad || null,
-      IdClub: registro.IdClub || null,
-      IdPF: registro.IdPF,
-    })) as unknown as Array<{
-      Division: string;
-      FechaCompetencia: string;
-      FechaEntrenamiento: string;
-      Capacidad: string | null;
-      SubCapacidad: string | null;
-      IdClub: string | null;
-      IdPF: string;
-    }>;
+    const registrosNorm = registros.map((r) => ({
+      Division: r.Division,
+      FechaCompetencia: r.FechaCompetencia,
+      FechaEntrenamiento: r.FechaEntrenamiento,
+      Capacidad: r.Capacidad ?? null,
+      SubCapacidad: r.SubCapacidad ?? null,
+      IdClub: r.IdClub ?? null,
+      IdPF: r.IdPF,
+    }));
 
     const { data, error } = await supabase
       .from("TipoSemana")
-      .insert(registrosConDivision)
+      .insert(registrosNorm)
       .select();
 
     if (error) throw error;

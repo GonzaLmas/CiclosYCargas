@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getJugadorasAptas, type Jugadora } from "../services/JugadoraService";
-import { getPFById } from "../services/PFService";
+import { getPFData } from "../services/TipoSemanaService";
 import { useAuth } from "../contexts/AuthContext";
 import Arrow from "./Arrow";
 
@@ -85,16 +85,16 @@ export default function JugadorasAptas() {
     const cargarJugadoras = async () => {
       if (!user?.id) return;
       try {
-        const pf = await getPFById(user.id);
-        if (!pf) {
+        const pfInfo = await getPFData(user.id);
+        if (!pfInfo || !pfInfo.IdClub || !pfInfo.DivisionIds || pfInfo.DivisionIds.length === 0) {
           setJugadoras([]);
-          setError("No se encontró el PF actual o no tiene club/división.");
+          setError("No se encontró el PF actual o no tiene club/divisiones.");
           return;
         }
 
         const data = await getJugadorasAptas();
         const filtradas = (data || []).filter(
-          (j) => j.IdClub === pf.IdClub && j.Division === pf.Division
+          (j) => j.IdClub === pfInfo.IdClub && !!j.Division && pfInfo.DivisionIds.includes(j.Division)
         );
         setJugadoras(filtradas);
       } catch (err) {

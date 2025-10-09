@@ -1,6 +1,6 @@
 import supabase from "./SupabaseService";
-import { getPFById } from "./PFService";
 import { getJugadorasAptas, type Jugadora } from "./JugadoraService";
+import { getPFData } from "./TipoSemanaService";
 
 export type EsfuerzoMap = Record<string, number | null>;
 export type FechaMap = Record<string, string | null>;
@@ -51,8 +51,8 @@ export async function getEsfuerzoDataForPF(
       totalSemanaById: {},
     };
 
-  const pf = await getPFById(userId);
-  if (!pf || !pf.IdClub || !pf.Division) {
+  const pfInfo = await getPFData(userId);
+  if (!pfInfo || !pfInfo.IdClub || !pfInfo.DivisionIds || pfInfo.DivisionIds.length === 0) {
     return {
       jugadoras: [],
       esfuerzoById: {},
@@ -63,7 +63,7 @@ export async function getEsfuerzoDataForPF(
 
   const all = await getJugadorasAptas();
   const jugadorasPF = (all || []).filter(
-    (j) => j.IdClub === pf.IdClub && j.Division === pf.Division
+    (j) => j.IdClub === pfInfo.IdClub && !!j.Division && pfInfo.DivisionIds.includes(j.Division)
   );
 
   const ids = jugadorasPF.map((j) => j.IdJugadora).filter(Boolean);
@@ -137,11 +137,11 @@ export async function getEsfuerzoDataForPF(
 
 export async function getJugadorasParaPF(userId: string): Promise<Jugadora[]> {
   if (!userId) return [];
-  const pf = await getPFById(userId);
-  if (!pf || !pf.IdClub || !pf.Division) return [];
+  const pfInfo = await getPFData(userId);
+  if (!pfInfo || !pfInfo.IdClub || !pfInfo.DivisionIds || pfInfo.DivisionIds.length === 0) return [];
   const all = await getJugadorasAptas();
   return (all || []).filter(
-    (j) => j.IdClub === pf.IdClub && j.Division === pf.Division
+    (j) => j.IdClub === pfInfo.IdClub && !!j.Division && pfInfo.DivisionIds.includes(j.Division)
   );
 }
 

@@ -7,6 +7,7 @@ import {
   fetchClubesData,
   validatePerfilForm,
   submitPerfilUpdate,
+  fetchDivisionesDisponibles,
 } from "../services/EditarPerfil";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -23,10 +24,12 @@ export default function EditarPerfil() {
   const [displayEdad, setDisplayEdad] = useState("");
   const [displayIdClub, setDisplayIdClub] = useState("");
   const [displayDivision, setDisplayDivision] = useState("");
+  const [displayDivisionList, setDisplayDivisionList] = useState<string[]>([]);
   const [form, setForm] = useState({
     Edad: "",
     IdClub: "",
     Division: "",
+    DivisionIds: [] as string[],
   });
   const [isEditing, setIsEditing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -57,10 +60,14 @@ export default function EditarPerfil() {
           setDisplayEdad(perfil.edad || "");
           setDisplayIdClub(perfil.idClub || "");
           setDisplayDivision(perfil.division || "");
+          if (role === "PF") {
+            setDisplayDivisionList(perfil.divisionIds || []);
+          }
           setForm({
             Edad: perfil.edad || "",
             IdClub: perfil.idClub || "",
             Division: perfil.division || "",
+            DivisionIds: perfil.divisionIds || [],
           });
           if (perfil.nextEditAt) setCooldownUntil(perfil.nextEditAt);
         } else {
@@ -69,11 +76,21 @@ export default function EditarPerfil() {
           setDisplayEdad("");
           setDisplayIdClub("");
           setDisplayDivision("");
-          setForm({ Edad: "", IdClub: "", Division: "" });
+          setDisplayDivisionList([]);
+          setForm({ Edad: "", IdClub: "", Division: "", DivisionIds: [] });
         }
 
         const clubesData = await fetchClubesData();
         setClubes(clubesData);
+
+        if (role === "PF") {
+          try {
+            const divis = await fetchDivisionesDisponibles();
+            setDivisionesDisponibles(divis);
+          } catch (e) {
+            console.warn("No se pudieron cargar divisiones disponibles", e);
+          }
+        }
       } catch (error) {
         console.error("Error al cargar los datos:", error);
         toast.error("Error al cargar los datos del perfil");
@@ -90,6 +107,26 @@ export default function EditarPerfil() {
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const [divisionesDisponibles, setDivisionesDisponibles] = useState<string[]>(
+    []
+  );
+  const [divisionToAdd, setDivisionToAdd] = useState<string>("");
+  const addDivision = () => {
+    if (!divisionToAdd) return;
+    setForm((prev) =>
+      prev.DivisionIds.includes(divisionToAdd)
+        ? prev
+        : { ...prev, DivisionIds: [...prev.DivisionIds, divisionToAdd] }
+    );
+    setDivisionToAdd("");
+  };
+  const removeDivision = (value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      DivisionIds: prev.DivisionIds.filter((d) => d !== value),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -228,7 +265,15 @@ export default function EditarPerfil() {
                   </div>
                   <div>
                     <span className="text-gray-400">División: </span>
-                    <span>{displayDivision || "—"}</span>
+                    {role === "PF" ? (
+                      <span>
+                        {displayDivisionList && displayDivisionList.length > 0
+                          ? displayDivisionList.join(", ")
+                          : "—"}
+                      </span>
+                    ) : (
+                      <span>{displayDivision || "—"}</span>
+                    )}
                   </div>
                 </div>
                 <div className="mt-4 flex items-center gap-3">
@@ -312,27 +357,95 @@ export default function EditarPerfil() {
                   </div>
 
                   {/* División */}
-                  <div>
-                    <label
-                      htmlFor="Division"
-                      className="block text-sm font-medium text-white mb-1"
-                    >
-                      División
-                    </label>
-                    <select
-                      id="Division"
-                      name="Division"
-                      value={form.Division}
-                      onChange={handleFormChange}
-                      className="w-full px-4 py-2 rounded-lg bg-neutral-700 border border-gray-600 text-white focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff] focus:outline-none transition-colors"
-                    >
-                      <option value="">-- Seleccione su división --</option>
-                      <option value="Primera">Primera División</option>
-                      <option value="Tercera">Tercera División</option>
-                      <option value="Cuarta">Cuarta División</option>
-                      <option value="Quinta">Quinta División</option>
-                    </select>
-                  </div>
+                  {role !== "PF" ? (
+                    <div>
+                      <label
+                        htmlFor="Division"
+                        className="block text-sm font-medium text-white mb-1"
+                      >
+                        División
+                      </label>
+                      <select
+                        id="Division"
+                        name="Division"
+                        value={form.Division}
+                        onChange={handleFormChange}
+                        className="w-full px-4 py-2 rounded-lg bg-neutral-700 border border-gray-600 text-white focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff] focus:outline-none transition-colors"
+                      >
+                        <option value="">-- Seleccione su división --</option>
+                        {divisionesDisponibles.length > 0 ? (
+                          divisionesDisponibles.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))
+                        ) : (
+                          <>
+                            <option value="Primera">Primera División</option>
+                            <option value="Tercera">Tercera División</option>
+                            <option value="Cuarta">Cuarta División</option>
+                            <option value="Quinta">Quinta División</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
+                  ) : (
+                    <div>
+                      <label
+                        htmlFor="DivisionSelect"
+                        className="block text-sm font-medium text-white mb-1"
+                      >
+                        Divisiones
+                      </label>
+                      <div className="flex gap-2">
+                        <select
+                          id="DivisionSelect"
+                          value={divisionToAdd}
+                          onChange={(e) => setDivisionToAdd(e.target.value)}
+                          className="flex-1 px-4 py-2 rounded-lg bg-neutral-700 border border-gray-600 text-white focus:border-[#646cff] focus:ring-2 focus:ring-[#646cff] focus:outline-none transition-colors"
+                        >
+                          <option value="">
+                            -- Seleccione una división --
+                          </option>
+                          {divisionesDisponibles
+                            .filter((d) => !form.DivisionIds.includes(d))
+                            .map((d) => (
+                              <option key={d} value={d}>
+                                {d}
+                              </option>
+                            ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={addDivision}
+                          className="px-3 py-2 rounded-lg bg-[#646cff] text-white hover:bg-[#535bf2]"
+                          disabled={!divisionToAdd}
+                        >
+                          Agregar
+                        </button>
+                      </div>
+                      {form.DivisionIds.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {form.DivisionIds.map((d) => (
+                            <span
+                              key={d}
+                              className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-neutral-700 text-white text-sm"
+                            >
+                              {d}
+                              <button
+                                type="button"
+                                onClick={() => removeDivision(d)}
+                                className="text-gray-300 hover:text-white"
+                                aria-label={`Quitar ${d}`}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Botones */}
                   <div className="flex gap-3 pt-4">
@@ -341,19 +454,23 @@ export default function EditarPerfil() {
                       onClick={() => navigate(-1)}
                       className="flex-1 py-2 px-4 rounded-lg font-medium bg-gray-600 text-white hover:bg-gray-700 transition-colors"
                     >
-                      Cancelar
+                      Volver
                     </button>
                     <button
                       type="submit"
                       disabled={
                         (role !== "PF" &&
                           (!form.Edad || !form.IdClub || !form.Division)) ||
-                        (role === "PF" && (!form.IdClub || !form.Division))
+                        (role === "PF" &&
+                          (!form.IdClub ||
+                            !(form.DivisionIds && form.DivisionIds.length > 0)))
                       }
                       className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
                         (role !== "PF" &&
                           (!form.Edad || !form.IdClub || !form.Division)) ||
-                        (role === "PF" && (!form.IdClub || !form.Division))
+                        (role === "PF" &&
+                          (!form.IdClub ||
+                            !(form.DivisionIds && form.DivisionIds.length > 0)))
                           ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                           : "bg-[#646cff] text-white hover:bg-[#535bf2] transform hover:-translate-y-0.5"
                       }`}

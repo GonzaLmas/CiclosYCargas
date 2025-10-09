@@ -5,6 +5,7 @@ import {
   getTipoSemanaByPF,
   getCapacidadesByIds,
   getSubcapacidadesByIds,
+  getPFData,
 } from "../services/TipoSemanaService";
 import {
   parseDate,
@@ -22,6 +23,8 @@ const Competencia = () => {
   const [fechaCompetencia, setFechaCompetencia] = useState("");
   const [capMap, setCapMap] = useState({});
   const [subcapMap, setSubcapMap] = useState({});
+  const [pfDivisions, setPfDivisions] = useState([]);
+  const [selectedDivision, setSelectedDivision] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,20 +37,29 @@ const Competencia = () => {
       try {
         setLoading(true);
         setError("");
-        const data = await getTipoSemanaByPF(user.id);
+        const [data, pfInfo, capSubMaps] = await Promise.all([
+          getTipoSemanaByPF(user.id),
+          getPFData(user.id),
+          (async () => {
+            return { cap: {}, sub: {} };
+          })(),
+        ]);
         setRegistros(data);
+        if (pfInfo && Array.isArray(pfInfo.DivisionIds)) {
+          setPfDivisions(pfInfo.DivisionIds);
+        }
 
+        const base =
+          (selectedDivision
+            ? data.filter((d) => d.Division === selectedDivision)
+            : data) || [];
         const fechasUnicas = Array.from(
-          new Set(data.map((d) => d.FechaCompetencia))
+          new Set(base.map((d) => d.FechaCompetencia))
         )
           .filter(Boolean)
           .sort((a, b) => parseDate(b) - parseDate(a));
 
         setFechas(fechasUnicas);
-
-        if (!fechaCompetencia && fechasUnicas.length > 0) {
-          setFechaCompetencia(fechasUnicas[0]);
-        }
 
         const capIds = Array.from(
           new Set(data.map((d) => d.Capacidad).filter(Boolean))
@@ -68,7 +80,7 @@ const Competencia = () => {
       }
     };
     fetchData();
-  }, [user, authLoading]);
+  }, [user, authLoading, selectedDivision]);
 
   const navigate = useNavigate();
 
@@ -84,6 +96,7 @@ const Competencia = () => {
   };
 
   const registrosSeleccion = registros
+    .filter((r) => !selectedDivision || r.Division === selectedDivision)
     .filter((r) => r.FechaCompetencia === fechaCompetencia)
     .filter((r) => isWeekday(parseDate(r.FechaEntrenamiento)))
     .sort(
@@ -101,6 +114,45 @@ const Competencia = () => {
   return (
     <div className="competency-form">
       <div className="field-group">
+        {/* Selector de División */}
+        <label htmlFor="divisionSelect">División</label>
+        <div className="select-wrapper">
+          <select
+            id="divisionSelect"
+            value={selectedDivision}
+            onChange={(e) => {
+              setSelectedDivision(e.target.value);
+              setFechaCompetencia("");
+            }}
+            className="select-input"
+            disabled={loading || !pfDivisions.length}
+          >
+            {!selectedDivision && (
+              <option value="">Seleccione la división</option>
+            )}
+            {pfDivisions.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+          <svg
+            className="select-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div className="field-group">
         {/* Selector de FechaCompetencia */}
         <label htmlFor="fechaCompetencia">
           Seleccione una fecha de competencia:
@@ -111,12 +163,14 @@ const Competencia = () => {
             value={fechaCompetencia || ""}
             onChange={handleChangeFecha}
             className="select-input"
-            disabled={loading || !fechas.length}
+            disabled={loading || !selectedDivision || !fechas.length}
           >
-            {!fechas.length ? (
+            {!selectedDivision ? (
+              <option value="">Seleccione la división</option>
+            ) : !fechas.length ? (
               <option value="">Cargando fechas...</option>
             ) : !fechaCompetencia ? (
-              <option value="">Seleccione una fecha</option>
+              <option value="">Seleccione la fecha de competencia</option>
             ) : null}
             {fechas.map((fecha) => {
               if (!fecha) return null;

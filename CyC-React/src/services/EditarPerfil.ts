@@ -1,6 +1,8 @@
 import { getJugadoraById, updateJugadora } from "./JugadoraService";
 import { getPFById, updatePF } from "./PFService";
 import { getClubes } from "./ClubService";
+import supabase from "./SupabaseService";
+import { getPFData } from "./TipoSemanaService";
 
 export type PerfilRole = "PF" | "Jugadora" | null;
 
@@ -10,6 +12,7 @@ export type PerfilData = {
   edad?: string;
   idClub: string;
   division: string;
+  divisionIds?: string[];
   nextEditAt?: number | null;
 };
 
@@ -17,6 +20,7 @@ export type PerfilForm = {
   Edad: string;
   IdClub: string;
   Division: string;
+  DivisionIds?: string[];
 };
 
 export async function fetchUserPerfil(
@@ -24,14 +28,20 @@ export async function fetchUserPerfil(
   role: PerfilRole
 ): Promise<PerfilData | null> {
   if (role === "PF") {
-    const pf = await getPFById(userId);
-    if (!pf) return null;
+    const [pf, pfInfo] = await Promise.all([
+      getPFById(userId),
+      getPFData(userId),
+    ]);
+    if (!pf && !pfInfo) return null;
     return {
-      nombre: pf.Nombre || "",
-      apellido: pf.Apellido || "",
-      idClub: pf.IdClub || "",
-      division: pf.Division || "",
-      nextEditAt: pf.FecProxEditPerfil ? Date.parse(pf.FecProxEditPerfil) : null,
+      nombre: pf?.Nombre || "",
+      apellido: pf?.Apellido || "",
+      idClub: (pf?.IdClub ?? pfInfo?.IdClub) || "",
+      division: "",
+      divisionIds: pfInfo?.DivisionIds || [],
+      nextEditAt: pf?.FecProxEditPerfil
+        ? Date.parse(pf.FecProxEditPerfil)
+        : null,
     };
   }
 
@@ -53,14 +63,24 @@ export async function fetchClubesData() {
   return await getClubes();
 }
 
+export async function fetchDivisionesDisponibles(): Promise<string[]> {
+  const { data, error } = await (supabase as any)
+    .from("Division")
+    .select("Descripcion");
+  if (error) throw error;
+  return (data || []).map((r: any) => r.Descripcion as string);
+}
+
 export function validatePerfilForm(
   form: PerfilForm,
   role: PerfilRole
 ): string | null {
   const isPF = role === "PF";
   if (isPF) {
-    if (!form.IdClub || !form.Division)
-      return "Por favor complete todos los campos";
+    if (!form.IdClub) return "Por favor complete todos los campos";
+    const hasDivs =
+      Array.isArray(form.DivisionIds) && form.DivisionIds.length > 0;
+    if (!hasDivs) return "Seleccione al menos una división";
     return null;
   }
   if (!form.Edad || !form.IdClub || !form.Division)
@@ -79,9 +99,24 @@ export async function submitPerfilUpdate(
   if (isPF) {
     await updatePF(userId, {
       IdClub: form.IdClub,
-      Division: form.Division,
       FecProxEditPerfil: nextIso,
     });
+
+    const divisions = Array.isArray(form.DivisionIds) ? form.DivisionIds : [];
+
+    const { error: delErr } = await (supabase as any)
+      .from("PF_Division")
+      .delete()
+      .eq("IdPF", userId);
+    if (delErr) throw delErr;
+
+    if (divisions.length > 0) {
+      const rows = divisions.map((d) => ({ IdPF: userId, Division: d }));
+      const { error: insErr } = await (supabase as any)
+        .from("PF_Division")
+        .insert(rows as any);
+      if (insErr) throw insErr;
+    }
   } else {
     await updateJugadora(userId, {
       Edad: parseInt(form.Edad, 10),
