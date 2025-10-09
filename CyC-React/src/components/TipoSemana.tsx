@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, Calendar, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -321,7 +321,9 @@ const TipoSemana = () => {
               disabled={pfDivisions.length === 0 || isLoading}
               className="select-input"
             >
-              {!selectedDivision && <option value="">Seleccione división</option>}
+              {!selectedDivision && (
+                <option value="">Seleccione división</option>
+              )}
               {pfDivisions.map((divId) => (
                 <option key={divId} value={divId}>
                   {divId}

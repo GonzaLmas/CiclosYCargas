@@ -106,7 +106,6 @@ export default function RegistroUsuario() {
       if (!form.Division) missing.push("División");
     } else if (esPF) {
       if (!form.IdClub) missing.push("Club");
-      if (!form.Division) missing.push("División");
     }
 
     if (missing.length > 0) {
@@ -156,7 +155,6 @@ export default function RegistroUsuario() {
           Apellido: form.Apellido,
           Email: form.Email,
           IdClub: form.IdClub,
-          Division: form.Division,
           FecProxEditPerfil: null,
         });
       }
@@ -353,25 +351,27 @@ export default function RegistroUsuario() {
                       </select>
                     </div>
 
-                    <div className="field-group">
-                      <label className="block text-sm font-medium text-gray-100">
-                        División
-                      </label>
-                      <select
-                        name="Division"
-                        value={form.Division}
-                        onChange={handleChange}
-                        className={`select-input ${
-                          !form.Division ? "text-gray-400" : ""
-                        }`}
-                      >
-                        <option value="">Seleccione su división</option>
-                        <option value="Primera">Primera</option>
-                        <option value="Tercera">Tercera</option>
-                        <option value="Cuarta">Cuarta</option>
-                        <option value="Quinta">Quinta</option>
-                      </select>
-                    </div>
+                    {form.IdRol === jugadoraRol?.value && (
+                      <div className="field-group">
+                        <label className="block text-sm font-medium text-gray-100">
+                          División
+                        </label>
+                        <select
+                          name="Division"
+                          value={form.Division}
+                          onChange={handleChange}
+                          className={`select-input ${
+                            !form.Division ? "text-gray-400" : ""
+                          }`}
+                        >
+                          <option value="">Seleccione su división</option>
+                          <option value="Primera">Primera</option>
+                          <option value="Tercera">Tercera</option>
+                          <option value="Cuarta">Cuarta</option>
+                          <option value="Quinta">Quinta</option>
+                        </select>
+                      </div>
+                    )}
                   </>
                 )}
 
