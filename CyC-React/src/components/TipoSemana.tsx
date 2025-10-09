@@ -127,7 +127,7 @@ const TipoSemana = () => {
       cargarSubcapacidades();
     }
   }, [capacidades]);
-  
+
   const handleCapacityChange = (dayNum: number, value: string) => {
     setDayCapacities({ ...dayCapacities, [dayNum]: value });
     setDayProperties({ ...dayProperties, [dayNum]: "" });
@@ -324,7 +324,7 @@ const TipoSemana = () => {
               }}
               className="date-input"
             />
-            <Calendar className="date-icon" size={20} />
+            {/* <Calendar className="date-icon" size={20} /> */}
           </div>
         </div>
 
