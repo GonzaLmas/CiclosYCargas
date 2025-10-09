@@ -5,14 +5,19 @@ import type { Jugadora } from "../services/JugadoraService";
 import {
   getJugadorasParaPF,
   getPercepcionHistorial,
-  getMonthRangeBA,
 } from "../services/JugadorasEsfuerzo";
 import {
   formatName,
   getMonthLabelCapitalized,
   getDaysInMonth,
   mapItemsToCalendarTMinus1,
+  mapItemsToDateMapTMinus1,
   shiftMonth,
+  getStartWeekdayMon0,
+  getPrevMonthLeadingInfo,
+  getTrailingInfo,
+  ymdKey,
+  buildExtendedBARange,
 } from "../services/HistorialPercepcion";
 
 export default function HistorialPercepcion() {
@@ -63,16 +68,34 @@ export default function HistorialPercepcion() {
     [year, month0]
   );
 
+  const startWeekdayMon0 = useMemo(
+    () => getStartWeekdayMon0(year, month0),
+    [year, month0]
+  );
+
+  const prevMonthInfo = useMemo(
+    () => getPrevMonthLeadingInfo(year, month0, startWeekdayMon0),
+    [year, month0, startWeekdayMon0]
+  );
+
+  const trailingInfo = useMemo(
+    () => getTrailingInfo(year, month0, startWeekdayMon0, daysInMonth),
+    [year, month0, startWeekdayMon0, daysInMonth]
+  );
+
   useEffect(() => {
     const loadHist = async () => {
       if (!jugadoraSel) return;
       setLoading(true);
       setError(null);
       try {
-        const { startISO, endISO } = getMonthRangeBA(year, month0);
-        const endPlus1ISO = new Date(
-          new Date(endISO).getTime() + 24 * 3600 * 1000
-        ).toISOString();
+        const { startISO, endISO } = buildExtendedBARange(
+          year,
+          month0,
+          prevMonthInfo.leadingCount,
+          trailingInfo.trailingCount
+        );
+        const endPlus1ISO = endISO;
         const data = await getPercepcionHistorial(
           jugadoraSel,
           startISO,
@@ -86,12 +109,20 @@ export default function HistorialPercepcion() {
       }
     };
     loadHist();
-  }, [jugadoraSel, year, month0]);
+  }, [
+    jugadoraSel,
+    year,
+    month0,
+    prevMonthInfo.leadingCount,
+    trailingInfo.trailingCount,
+  ]);
 
   const mapByDay = useMemo(
     () => mapItemsToCalendarTMinus1(items, year, month0),
     [items, year, month0]
   );
+
+  const dateMap = useMemo(() => mapItemsToDateMapTMinus1(items), [items]);
 
   const changeMonth = (delta: number) => {
     const next = shiftMonth(year, month0, delta);
@@ -168,45 +199,135 @@ export default function HistorialPercepcion() {
 
               {/* Grid responsive: 3 cols en mobile, 7 en sm+ */}
               <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
-                {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(
-                  (day) => {
-                    const val = mapByDay.get(day);
-                    const badge = val == null ? "-" : String(val);
-                    const color =
-                      val == null
-                        ? "border-gray-700 text-white/70"
-                        : val >= 8
+                {Array.from(
+                  {
+                    length:
+                      prevMonthInfo.leadingCount +
+                      daysInMonth +
+                      trailingInfo.trailingCount,
+                  },
+                  (_, i) => i
+                ).map((i) => {
+                  if (i < prevMonthInfo.leadingCount) {
+                    const dayPrev = prevMonthInfo.leadingDays[i];
+                    const keyPrev = ymdKey(
+                      prevMonthInfo.prevYear,
+                      prevMonthInfo.prevMonth0,
+                      dayPrev
+                    );
+                    const valPrev = dateMap.get(keyPrev) ?? null;
+                    const badgePrev = valPrev == null ? "-" : String(valPrev);
+                    const colorPrev =
+                      valPrev == null
+                        ? "border-gray-700 text-white/40"
+                        : valPrev >= 8
                         ? "bg-red-600 text-white"
-                        : val >= 4
+                        : valPrev >= 4
                         ? "bg-yellow-400 text-gray-900"
                         : "bg-green-600 text-white";
-
-                    const isToday =
-                      today.getDate() === day &&
-                      today.getMonth() === month0 &&
-                      today.getFullYear() === year;
-
                     return (
                       <div
-                        key={day}
-                        className={`rounded border-2 p-2 flex flex-col items-center justify-center min-h-[64px] ${
-                          isToday
-                            ? "border-[#f86d92] shadow-lg shadow-[#f86d92]/30"
-                            : "border-gray-700"
+                        key={`prev-${dayPrev}`}
+                        className={`rounded border-2 p-2 flex flex-col items-center justify-center min-h-[64px] border-gray-700 ${
+                          valPrev == null ? "text-white/40" : ""
                         }`}
+                        aria-label={`Día ${dayPrev} del mes anterior`}
                       >
-                        <div className="text-xs text-white/70">{day}</div>
+                        <div className="text-xs">{dayPrev}</div>
                         <div
                           className={`mt-1 inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded text-xs font-semibold ${
-                            val == null ? "" : color
+                            valPrev == null ? "" : colorPrev
                           }`}
                         >
-                          {badge}
+                          {badgePrev}
                         </div>
                       </div>
                     );
                   }
-                )}
+                  if (i >= prevMonthInfo.leadingCount + daysInMonth) {
+                    const idx = i - (prevMonthInfo.leadingCount + daysInMonth);
+                    const dayNext = trailingInfo.trailingDays[idx];
+                    const keyNext = ymdKey(
+                      trailingInfo.nextYear,
+                      trailingInfo.nextMonth0,
+                      dayNext
+                    );
+                    const valNext = dateMap.get(keyNext) ?? null;
+                    const badgeNext = valNext == null ? "-" : String(valNext);
+                    const colorNext =
+                      valNext == null
+                        ? "border-gray-800 text-white/40"
+                        : valNext >= 8
+                        ? "bg-red-600 text-white"
+                        : valNext >= 4
+                        ? "bg-yellow-400 text-gray-900"
+                        : "bg-green-600 text-white";
+                    if (valNext == null) {
+                      return (
+                        <div
+                          key={`next-${dayNext}`}
+                          className="rounded p-2 flex flex-col items-center justify-center min-h-[64px] text-white/40"
+                          aria-label={`Día ${dayNext} del mes siguiente (sin dato)`}
+                        >
+                          <div className="text-xs">{dayNext}</div>
+                          <div className="mt-1 inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded text-xs font-semibold">
+                            -
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div
+                        key={`next-${dayNext}`}
+                        className="rounded border-2 p-2 flex flex-col items-center justify-center min-h-[64px] border-gray-700"
+                        aria-label={`Día ${dayNext} del mes siguiente`}
+                      >
+                        <div className="text-xs text-white/70">{dayNext}</div>
+                        <div
+                          className={`mt-1 inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded text-xs font-semibold ${colorNext}`}
+                        >
+                          {badgeNext}
+                        </div>
+                      </div>
+                    );
+                  }
+                  const day = i - prevMonthInfo.leadingCount + 1;
+                  const val = mapByDay.get(day);
+                  const badge = val == null ? "-" : String(val);
+                  const color =
+                    val == null
+                      ? "border-gray-700 text-white/70"
+                      : val >= 8
+                      ? "bg-red-600 text-white"
+                      : val >= 4
+                      ? "bg-yellow-400 text-gray-900"
+                      : "bg-green-600 text-white";
+
+                  const isToday =
+                    today.getDate() === day &&
+                    today.getMonth() === month0 &&
+                    today.getFullYear() === year;
+
+                  return (
+                    <div
+                      key={day}
+                      className={`rounded border-2 p-2 flex flex-col items-center justify-center min-h-[64px] ${
+                        isToday
+                          ? "border-[#f86d92] shadow-lg shadow-[#f86d92]/30"
+                          : "border-gray-700"
+                      }`}
+                    >
+                      <div className="text-xs text-white/70">{day}</div>
+                      <div
+                        className={`mt-1 inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded text-xs font-semibold ${
+                          val == null ? "" : color
+                        }`}
+                      >
+                        {badge}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Leyenda */}
